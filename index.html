@@ -388,7 +388,7 @@
     <div style="display:flex; gap:10px;"><div class="form-group" style="width:50%;"><label>Start Date</label><input type="date" id="taskStart"></div><div class="form-group" style="width:50%;"><label>End Date</label><input type="date" id="taskEnd"></div></div>
     <div style="display:flex; gap:10px; align-items:flex-end;"><div class="form-group" style="width:50%;"><label>Progress</label><div class="progress-slider-wrap"><input type="range" id="taskProgress" min="0" max="100" value="0" oninput="document.getElementById('progressVal').textContent=this.value+'%'"><span class="progress-val" id="progressVal">0%</span></div></div><div class="form-group" style="width:50%; margin-bottom: 20px;"><label style="cursor:pointer;display:flex;align-items:center;gap:12px"><span><input type="checkbox" id="taskIsMilestone"> Milestone</span><span style="color:#e8590c"><input type="checkbox" id="taskIsGate"> Gate</span></label></div></div>
     <div class="form-group"><label>Notes</label><textarea id="taskNotes" rows="2" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:0.85rem; resize:vertical;" placeholder="Optional notes…"></textarea></div>
-    <div class="form-group" style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid var(--border);"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><label style="margin:0;">Predecessors</label><button type="button" class="secondary small" onclick="addDependencyRow()">+ Add</button></div><div id="dependencyContainer"></div></div>
+    <div class="form-group" style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid var(--border);"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><label style="margin:0;">Predecessors</label><div style="display:flex;gap:6px;"><button type="button" class="secondary small" onclick="clearAllDependencies()" style="color:#c0392b;border-color:#fecaca;">Clear all</button><button type="button" class="secondary small" onclick="addDependencyRow()">+ Add</button></div></div><div id="dependencyContainer"></div></div>
     <div style="display:flex; justify-content:space-between; margin-top:20px;"><button class="secondary" onclick="deleteTask()" style="color:red;">Delete</button><div><button class="secondary" onclick="closeModals()">Cancel</button><button class="primary" onclick="saveTask()">Save</button></div></div></div></div>
     
     <div class="modal-overlay" id="phaseModal"><div class="modal"><h3>Phase</h3><input type="hidden" id="phaseId">
@@ -1019,10 +1019,11 @@
         tasks.forEach(t => { if (!t.start) t.start = today; if (!t.end) t.end = nextWeek; t.inCycle = false; });
 
         // Tier 1: Cycle detection
-        const cycleIds = detectCycles(tasks);
+        const cycleIds = detectCycles(tasks).map(String);
         if (cycleIds.length) {
             tasks.forEach(t => { if (cycleIds.includes(String(t.id))) t.inCycle = true; });
-            toast('⚠ Circular dependency detected — check highlighted tasks', 'error', 5000);
+            const names = tasks.filter(t => cycleIds.includes(String(t.id))).map(t => t.name).slice(0, 4).join(', ');
+            toast('⚠ Circular dependency: ' + names, 'error', 7000);
         }
 
         let validStarts = tasks.filter(t => t.start).map(t => parseDate(t.start));
@@ -1966,6 +1967,12 @@
 
     function deleteMarker() { const proj = db.projects.find(p => p.id === db.activeId); const id = document.getElementById('markerId').value; if(id) { proj.markers = proj.markers.filter(x => x.id != id); saveDB(); renderGantt(); } closeModals(); }
     
+    function clearAllDependencies() {
+        if (!confirm('Remove ALL predecessor links from this task? This cannot be undone.')) return;
+        document.getElementById('dependencyContainer').innerHTML = '';
+        toast('Predecessors cleared — click Save to apply', 'info', 2500);
+    }
+
     function addDependencyRow(taskId = '', type = 'FS', lag = 0) {
         const proj = db.projects.find(p => p.id === db.activeId); const currentTaskId = document.getElementById('taskId').value; const container = document.getElementById('dependencyContainer');
         const row = document.createElement('div'); row.className = 'dep-row';
