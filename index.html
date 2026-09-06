@@ -471,6 +471,10 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_lxWZQXOxzFbbseP_nV3shw_WRFzRBes';
     const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+    // Safe local ID generator — integer-only, no floating point precision issues
+    let _localIdCounter = Date.now();
+    function nextLocalId() { return ++_localIdCounter; }
+
     // ============================================================
     // AUTH SCREEN
     // ============================================================
@@ -553,7 +557,7 @@
 
             const projects = [];
             for (const p of projRows) {
-                const localProjId = Date.now() + Math.random();
+                const localProjId = nextLocalId();
                 const [taskRes, phaseRes, markerRes] = await Promise.all([
                     sb.from('tasks').select('*').eq('project_id', p.id).order('sort_order'),
                     sb.from('phases').select('*').eq('project_id', p.id),
@@ -566,7 +570,7 @@
                 // Pass 1: assign local numeric ids, build dbId -> localId map
                 const idMap = {};
                 const withLocalIds = taskRows.map(t => {
-                    const localId = Date.now() + Math.random();
+                    const localId = nextLocalId();
                     idMap[t.id] = localId;
                     return { row: t, localId };
                 });
@@ -589,12 +593,12 @@
                 }));
 
                 const highlights = phaseRows.map(h => ({
-                    id: Date.now() + Math.random(), _dbId: h.id,
+                    id: nextLocalId(), _dbId: h.id,
                     label: h.label, start: h.start_date, end: h.end_date,
                     methodology: h.methodology, sprintDays: h.sprint_days, numSprints: h.num_sprints
                 }));
                 const markers = markerRows.map(m => ({
-                    id: Date.now() + Math.random(), _dbId: m.id,
+                    id: nextLocalId(), _dbId: m.id,
                     label: m.label, date: m.marker_date
                 }));
 
@@ -800,7 +804,7 @@
             const taskRows = taskRes.data || [], phaseRows = phaseRes.data || [], markerRows = markerRes.data || [];
 
             const idMap = {};
-            const withLocalIds = taskRows.map(t => { const localId = Date.now() + Math.random(); idMap[t.id] = localId; return { row: t, localId }; });
+            const withLocalIds = taskRows.map(t => { const localId = nextLocalId(); idMap[t.id] = localId; return { row: t, localId }; });
             const tasks = withLocalIds.map(({ row: t, localId }) => ({
                 id: localId, _dbId: t.id, name: t.name, owner: t.owner || '',
                 start: t.start_date, end: t.end_date, progress: t.progress || 0, notes: t.notes || '',
@@ -850,7 +854,7 @@
 
     // === Tier 1: Utility functions ===
     function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
-    function uid() { return crypto.randomUUID ? crypto.randomUUID() : ('' + Date.now() + Math.random()).replace('.',''); }
+    function uid() { return crypto.randomUUID ? crypto.randomUUID() : ('' + nextLocalId()).replace('.',''); }
     function toast(msg, type='info', ms=3500) {
         const c = document.getElementById('toastContainer'); const t = document.createElement('div');
         t.className = 'toast ' + type; t.textContent = msg; c.appendChild(t); setTimeout(() => t.remove(), ms);
@@ -1173,10 +1177,10 @@
         copy.id = Date.now(); copy.name = src.name + ' (copy)';
         // Remap task IDs so deps still work
         const idMap = {};
-        copy.tasks.forEach(t => { const newId = Date.now() + Math.random(); idMap[t.id] = newId; t.id = newId; t.baselineStart = null; t.baselineEnd = null; });
+        copy.tasks.forEach(t => { const newId = nextLocalId(); idMap[t.id] = newId; t.id = newId; t.baselineStart = null; t.baselineEnd = null; });
         copy.tasks.forEach(t => { if (t.parentId) t.parentId = idMap[t.parentId] || t.parentId; if (t.deps) t.deps.forEach(d => { d.id = idMap[d.id] || d.id; }); });
-        copy.highlights.forEach(h => h.id = Date.now() + Math.random());
-        copy.markers.forEach(m => m.id = Date.now() + Math.random());
+        copy.highlights.forEach(h => h.id = nextLocalId());
+        copy.markers.forEach(m => m.id = nextLocalId());
         db.projects.push(copy); saveDB(); renderSidebar();
         toast('Project duplicated — right-click to rename', 'success');
     }
