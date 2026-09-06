@@ -447,7 +447,12 @@
 
 <div class="modal-overlay" id="taskModal"><div class="modal"><h3 id="taskModalTitle">Task Settings</h3><input type="hidden" id="taskId">
     <div class="form-group"><label>Task Name</label><input type="text" id="taskName"></div>
-    <div style="display:flex; gap:10px;"><div class="form-group" style="width:50%;"><label>Owner</label><input type="text" id="taskOwner"></div><div class="form-group" style="width:50%;"><label>Parent Task</label><select id="taskParentId"><option value="">None</option></select></div></div>
+    <div style="display:flex; gap:10px;"><div class="form-group" style="width:50%;"><label>Owner</label>
+        <select id="taskOwnerSelect" onchange="handleOwnerSelectChange()"><option value="">None</option></select>
+        <input type="text" id="taskOwnerNew" placeholder="Type new owner name…" style="margin-top:6px;display:none;">
+        <input type="hidden" id="taskOwner">
+    </div><div class="form-group" style="width:50%;"><label>Parent Task</label><select id="taskParentId"><option value="">None</option></select></div></div>
+    <datalist id="ownerSuggestions"></datalist>
     <div style="display:flex; gap:10px;"><div class="form-group" style="width:50%;"><label>Start Date</label><input type="date" id="taskStart"></div><div class="form-group" style="width:50%;"><label>End Date</label><input type="date" id="taskEnd"></div></div>
     <div style="display:flex; gap:10px; align-items:flex-end;"><div class="form-group" style="width:50%;"><label>Progress</label><div class="progress-slider-wrap"><input type="range" id="taskProgress" min="0" max="100" value="0" oninput="document.getElementById('progressVal').textContent=this.value+'%'"><span class="progress-val" id="progressVal">0%</span></div></div><div class="form-group" style="width:50%; margin-bottom: 20px;"><label style="cursor:pointer;display:flex;align-items:center;gap:12px"><span><input type="checkbox" id="taskIsMilestone"> Milestone</span><span style="color:#e8590c"><input type="checkbox" id="taskIsGate"> Gate</span></label></div></div>
     <div class="form-group"><label>Notes</label><textarea id="taskNotes" rows="2" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:0.85rem; resize:vertical;" placeholder="Optional notes…"></textarea></div>
@@ -1369,6 +1374,11 @@
         proj.tasks = calculateCPM(proj.tasks);
         if(typeof populateOwnerFilter === 'function') populateOwnerFilter();
         if(typeof renderStatsBar === 'function') renderStatsBar(proj.tasks);
+        const ownerSuggestionsEl = document.getElementById('ownerSuggestions');
+        if (ownerSuggestionsEl) {
+            const allOwners = [...new Set(proj.tasks.map(t => t.owner).filter(Boolean))].sort();
+            ownerSuggestionsEl.innerHTML = allOwners.map(o => `<option value="${esc(o)}">`).join('');
+        }
         let allD = [new Date()];
         proj.tasks.forEach(t => { if(t.start) allD.push(new Date(t.start)); if(t.end) allD.push(new Date(t.end)); if(t.baselineStart) allD.push(new Date(t.baselineStart)); if(t.baselineEnd) allD.push(new Date(t.baselineEnd)); });
         proj.highlights.forEach(h => { if(h.start) allD.push(new Date(h.start)); if(h.end) allD.push(new Date(h.end)); });
@@ -1580,7 +1590,7 @@
         rowHtml += `<svg class="dependency-svg-layer" id="depSvgLayer" style="width:${timelineWidth}px;height:${renderList.length * 48}px;overflow:visible;">${svgDefs}</svg></div>`;
         namesC.innerHTML += `<div class="inline-add-row">
             <input class="inline-name" id="inlineTaskName" type="text" placeholder="+ New task name..." onkeydown="if(event.key==='Enter')quickAddTask()">
-            <input class="inline-owner" id="inlineTaskOwner" type="text" placeholder="Owner" onkeydown="if(event.key==='Enter')quickAddTask()">
+            <input class="inline-owner" id="inlineTaskOwner" type="text" list="ownerSuggestions" placeholder="Owner" autocomplete="off" onkeydown="if(event.key==='Enter')quickAddTask()">
             <button onclick="quickAddTask()">Add</button>
         </div>`;
         namesC.innerHTML += '<div class="name-footer-filler"></div>';
@@ -2109,11 +2119,29 @@
         parS.innerHTML = '<option value="">None</option>' + proj.tasks.filter(t => t.id != id).map(t => `<option value="${t.id}">${taskLabel(t)}</option>`).join('');
         const depContainer = document.getElementById('dependencyContainer'); depContainer.innerHTML = '';
         document.getElementById('taskModalTitle').textContent = id ? 'Edit Task' : 'New Task';
+
+        // Populate owner dropdown with every unique owner already used in this project
+        const uniqueOwners = [...new Set(proj.tasks.map(t => t.owner).filter(Boolean))].sort();
+        const ownerSelect = document.getElementById('taskOwnerSelect');
+        ownerSelect.innerHTML = '<option value="">None</option>' + uniqueOwners.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('') + '<option value="__new__">+ Add new owner…</option>';
+        document.getElementById('taskOwnerNew').style.display = 'none';
+        document.getElementById('taskOwnerNew').value = '';
         
         if(id) {
             const t = proj.tasks.find(x => x.id == id);
             document.getElementById('taskId').value = t.id; document.getElementById('taskName').value = t.name;
-            document.getElementById('taskOwner').value = t.owner; document.getElementById('taskStart').value = t.start;
+            document.getElementById('taskOwner').value = t.owner || '';
+            if (t.owner && uniqueOwners.includes(t.owner)) {
+                ownerSelect.value = t.owner;
+            } else if (t.owner) {
+                // Owner exists on this task but wasn't in the dropdown for some reason — fall back to new-owner mode
+                ownerSelect.value = '__new__';
+                document.getElementById('taskOwnerNew').style.display = 'block';
+                document.getElementById('taskOwnerNew').value = t.owner;
+            } else {
+                ownerSelect.value = '';
+            }
+            document.getElementById('taskStart').value = t.start;
             document.getElementById('taskEnd').value = t.end;
             // Store working-day duration for auto-preserve
             _taskOrigDuration = t.start && t.end ? calDaysToWorkingDays(t.start, getDaysDiff(new Date(t.start), new Date(t.end)) + 1) : 5;
@@ -2127,7 +2155,7 @@
             const today = new Date(); const nextWeek = new Date(); nextWeek.setDate(today.getDate() + 7);
             _taskOrigDuration = 5; // default 5 working days
             document.getElementById('taskId').value = ""; document.getElementById('taskName').value = "";
-            document.getElementById('taskOwner').value = ""; document.getElementById('taskProgress').value = "0";
+            document.getElementById('taskOwner').value = ""; ownerSelect.value = ""; document.getElementById('taskProgress').value = "0";
             document.getElementById('progressVal').textContent = '0%';
             document.getElementById('taskStart').value = formatDate(today);
             document.getElementById('taskEnd').value = formatDate(nextWeek);
@@ -2139,16 +2167,33 @@
         setTimeout(() => document.getElementById('taskName').focus(), 100);
     }
     
+    function handleOwnerSelectChange() {
+        const sel = document.getElementById('taskOwnerSelect');
+        const newInput = document.getElementById('taskOwnerNew');
+        if (sel.value === '__new__') {
+            newInput.style.display = 'block';
+            newInput.value = '';
+            newInput.focus();
+            document.getElementById('taskOwner').value = '';
+        } else {
+            newInput.style.display = 'none';
+            document.getElementById('taskOwner').value = sel.value;
+        }
+    }
+    
     function saveTask() {
         const proj = db.projects.find(p => p.id === db.activeId); const id = document.getElementById('taskId').value;
         const taskName = document.getElementById('taskName').value.trim(); const taskStart = document.getElementById('taskStart').value; const taskEnd = document.getElementById('taskEnd').value;
         if (!taskName) { toast('Please enter a task name', 'error'); return; }
         if (!taskStart || !taskEnd) { toast('Please set both start and end dates', 'error'); return; }
+        // Resolve final owner value: either picked from dropdown, or freshly typed into the new-owner field
+        const ownerSelectVal = document.getElementById('taskOwnerSelect').value;
+        const finalOwner = ownerSelectVal === '__new__' ? document.getElementById('taskOwnerNew').value.trim() : ownerSelectVal;
         const depRows = document.querySelectorAll('#dependencyContainer .dep-row'); let selectedDeps = [];
         depRows.forEach(row => { const tid = row.querySelector('.task-select').value; const type = row.querySelector('.type-select').value; const lag = parseInt(row.querySelector('.lag-input').value) || 0; if (tid) selectedDeps.push({ id: tid, type: type, lag: lag }); });
 
         const task = { 
-            id: id ? parseInt(id) : Date.now(), name: taskName, owner: document.getElementById('taskOwner').value, 
+            id: id ? parseInt(id) : Date.now(), name: taskName, owner: finalOwner, 
             start: taskStart, end: taskEnd, progress: document.getElementById('taskProgress').value, 
             parentId: document.getElementById('taskParentId').value, deps: selectedDeps, isMilestone: document.getElementById('taskIsMilestone').checked,
             isGate: document.getElementById('taskIsGate').checked,
