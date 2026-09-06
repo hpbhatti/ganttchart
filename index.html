@@ -287,6 +287,7 @@
         .auth-toggle { text-align: center; margin-top: 16px; font-size: 13px; color: var(--text-muted); }
         .auth-toggle a { color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: none; }
         .auth-error { background: #fef3f2; color: #9a3412; border: 1px solid #fed7aa; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12.5px; margin-bottom: 12px; display: none; }
+        .auth-error.success { background: var(--primary-light); color: #2c5f3f; border: 1px solid #b7d9c4; }
         .auth-loading { text-align: center; color: var(--text-muted); font-size: 13px; padding: 40px 0; }
 
         /* ── Public share view banner ── */
@@ -523,9 +524,10 @@
         document.getElementById('authError').style.display = 'none';
     }
 
-    function showAuthError(msg) {
+    function showAuthError(msg, isSuccess) {
         const el = document.getElementById('authError');
         el.textContent = msg; el.style.display = 'block';
+        el.classList.toggle('success', !!isSuccess);
     }
 
     async function handleAuthSubmit() {
@@ -542,11 +544,11 @@
                 if (error) throw error;
                 await onAuthSuccess(data.user);
             } else {
-                const { data, error } = await sb.auth.signUp({ email, password });
+                const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + window.location.pathname } });
                 if (error) throw error;
                 if (data.user && !data.session) {
-                    showAuthError('Check your email to confirm your account, then sign in.');
                     toggleAuthMode();
+                    showAuthError('Check your email to confirm your account, then sign in.', true);
                 } else {
                     await onAuthSuccess(data.user);
                 }
