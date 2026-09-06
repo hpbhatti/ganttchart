@@ -275,10 +275,22 @@
             @page { margin: 10mm; size: A3 landscape; }
         }
         /* ── Auth screen ── */
-        .auth-overlay { position: fixed; inset: 0; background: var(--bg-color); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .auth-card { background: white; padding: 36px 34px; border-radius: 14px; width: 380px; box-shadow: var(--shadow); }
-        .auth-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; letter-spacing: -.02em; display: flex; align-items: center; gap: 10px; }
-        .auth-card p.sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+        .auth-overlay { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; }
+        .auth-brand-panel { flex: 1; background: var(--sidebar-bg); color: #e8ede9; display: flex; flex-direction: column; justify-content: center; padding: 60px 70px; position: relative; overflow: hidden; }
+        .auth-brand-panel::before { content: ''; position: absolute; top: -100px; right: -100px; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgba(87,138,110,.25), transparent 70%); }
+        .auth-brand-panel::after { content: ''; position: absolute; bottom: -140px; left: -80px; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(196,154,60,.15), transparent 70%); }
+        .auth-brand-logo { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 700; margin-bottom: 40px; position: relative; z-index: 1; }
+        .auth-brand-headline { font-size: 32px; font-weight: 700; line-height: 1.25; letter-spacing: -.02em; margin-bottom: 16px; position: relative; z-index: 1; max-width: 440px; }
+        .auth-brand-sub { font-size: 15px; color: #a0b5a8; line-height: 1.6; margin-bottom: 44px; max-width: 400px; position: relative; z-index: 1; }
+        .auth-feature-list { display: flex; flex-direction: column; gap: 20px; position: relative; z-index: 1; }
+        .auth-feature-item { display: flex; align-items: flex-start; gap: 14px; }
+        .auth-feature-icon { width: 34px; height: 34px; border-radius: 9px; background: rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+        .auth-feature-text strong { display: block; font-size: 14px; font-weight: 600; color: white; margin-bottom: 2px; }
+        .auth-feature-text span { font-size: 13px; color: #93a89b; line-height: 1.5; }
+        .auth-form-panel { width: 460px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 40px; }
+        .auth-card { width: 100%; max-width: 340px; }
+        .auth-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; letter-spacing: -.02em; }
+        .auth-card p.sub { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
         .auth-card .form-group { margin-bottom: 14px; }
         .auth-card .form-group label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; }
         .auth-card input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); outline: none; font-family: inherit; font-size: 14px; }
@@ -289,6 +301,11 @@
         .auth-error { background: #fef3f2; color: #9a3412; border: 1px solid #fed7aa; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12.5px; margin-bottom: 12px; display: none; }
         .auth-error.success { background: var(--primary-light); color: #2c5f3f; border: 1px solid #b7d9c4; }
         .auth-loading { text-align: center; color: var(--text-muted); font-size: 13px; padding: 40px 0; }
+        .auth-footer { position: absolute; bottom: 16px; left: 0; right: 0; text-align: center; font-size: 11.5px; color: var(--text-muted); z-index: 1; }
+        @media (max-width: 900px) {
+            .auth-brand-panel { display: none; }
+            .auth-form-panel { width: 100%; }
+        }
 
         /* ── Public share view banner ── */
         .share-banner { background: var(--sidebar-bg); color: white; padding: 8px 20px; font-size: 12.5px; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -306,18 +323,40 @@
 
     <!-- ── Auth Screen ── -->
     <div class="auth-overlay" id="authOverlay">
-        <div class="auth-card">
-            <h2>
-                <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="18" height="5" rx="2.5" fill="#578a6e"/><rect x="8" y="14" width="22" height="5" rx="2.5" fill="#c49a3c"/><rect x="5" y="22" width="14" height="5" rx="2.5" fill="#578a6e" opacity=".5"/></svg>
-                <span id="authTitle">Sign in</span>
-            </h2>
-            <p class="sub" id="authSub">Access your project schedules</p>
-            <div class="auth-error" id="authError"></div>
-            <div class="form-group"><label>Email</label><input type="email" id="authEmail" placeholder="you@company.com" autocomplete="email"></div>
-            <div class="form-group"><label>Password</label><input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')handleAuthSubmit()"></div>
-            <button class="primary" id="authSubmitBtn" onclick="handleAuthSubmit()">Sign in</button>
-            <div class="auth-toggle" id="authToggleWrap">Don't have an account? <a onclick="toggleAuthMode()">Sign up</a></div>
+        <div class="auth-brand-panel">
+            <div class="auth-brand-logo">
+                <svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="18" height="5" rx="2.5" fill="#578a6e"/><rect x="8" y="14" width="22" height="5" rx="2.5" fill="#c49a3c"/><rect x="5" y="22" width="14" height="5" rx="2.5" fill="#578a6e" opacity=".5"/></svg>
+                Project Master Pro
+            </div>
+            <div class="auth-brand-headline">Plan projects with clarity, not chaos.</div>
+            <div class="auth-brand-sub">Auto-scheduling, critical path tracking, and dependency management — built for teams who need their timeline to just make sense.</div>
+            <div class="auth-feature-list">
+                <div class="auth-feature-item">
+                    <div class="auth-feature-icon">📊</div>
+                    <div class="auth-feature-text"><strong>Auto-scheduling</strong><span>Dependencies and lags update the whole timeline automatically</span></div>
+                </div>
+                <div class="auth-feature-item">
+                    <div class="auth-feature-icon">🔗</div>
+                    <div class="auth-feature-text"><strong>Cloud sync</strong><span>Your projects save automatically and stay in sync across devices</span></div>
+                </div>
+                <div class="auth-feature-item">
+                    <div class="auth-feature-icon">👁</div>
+                    <div class="auth-feature-text"><strong>Share instantly</strong><span>Send a read-only link to anyone — no account needed on their end</span></div>
+                </div>
+            </div>
         </div>
+        <div class="auth-form-panel">
+            <div class="auth-card">
+                <h2><span id="authTitle">Sign in</span></h2>
+                <p class="sub" id="authSub">Access your project schedules</p>
+                <div class="auth-error" id="authError"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="authEmail" placeholder="you@company.com" autocomplete="email"></div>
+                <div class="form-group"><label>Password</label><input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')handleAuthSubmit()"></div>
+                <button class="primary" id="authSubmitBtn" onclick="handleAuthSubmit()">Sign in</button>
+                <div class="auth-toggle" id="authToggleWrap">Don't have an account? <a onclick="toggleAuthMode()">Sign up</a></div>
+            </div>
+        </div>
+        <div class="auth-footer">Designed by HP Bhatty for QASEM JANI</div>
     </div>
 
     <!-- ── Public share-mode banner (shown only when viewing a shared link) ── -->
