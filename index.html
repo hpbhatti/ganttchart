@@ -15,6 +15,8 @@
     <style>
         :root {
             --primary: #578a6e; --primary-hover: #4a7c61; --primary-light: #eef5f1;
+            --spotlight: #2563eb; --spotlight-light: #eff6ff;
+            --status-not-started: #94a3b8; --status-in-progress: #8c6239; --status-overdue: #dc2626;
             --accent: #c49a3c; --accent-light: #faf5ea; --accent-hover: #b38a30;
             --sidebar-bg: #2c3a33; --sidebar-hover: #3a4b42; --sidebar-active: #578a6e;
             --bg-color: #f7f5f0; --card-bg: #ffffff; --text-main: #2c3531; --text-muted: #7c8a84;
@@ -48,13 +50,11 @@
         .progress-val { font-size: 13px; font-weight: 700; min-width: 36px; text-align: right; color: var(--primary); }
 
         .gantt-bar.cycle-warn { background: repeating-linear-gradient(45deg, #c0392b, #c0392b 8px, #a93226 8px, #a93226 16px) !important; animation: cyclepulse 1s infinite; }
-        .gantt-bar.overdue { box-shadow: 0 0 0 2px #e67700, inset 0 0 0 1px rgba(230,119,0,.3) !important; animation: overdueFlash 2s infinite; }
-        @keyframes overdueFlash { 0%,100% { box-shadow: 0 0 0 2px #e67700; } 50% { box-shadow: 0 0 0 2px rgba(230,119,0,.3); } }
         .dur-badge { font-size: 10px; font-weight: 600; color: var(--text-muted); background: var(--border-light); padding: 1px 6px; border-radius: 10px; flex-shrink: 0; }
         .badge-gate { font-size: 8px; font-weight: 700; color: var(--gate-color); background: var(--gate-bg); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--gate-border); flex-shrink: 0; }
         .badge-ms { font-size: 8px; font-weight: 700; color: var(--milestone); background: #f3f0ff; padding: 1px 5px; border-radius: 3px; border: 1px solid #e9e5f5; flex-shrink: 0; }
 
-        .bar-initials { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,.25); display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; color: white; z-index: 3; letter-spacing: -.02em; text-shadow: 0 1px 1px rgba(0,0,0,.12); }
+        .bar-label-outside { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 6px; font-size: 10px; font-weight: 700; color: var(--text-main); white-space: nowrap; pointer-events: none; z-index: 50; text-shadow: 0 0 3px var(--card-bg), 0 0 3px var(--card-bg), 0 0 3px var(--card-bg), 0 0 3px var(--card-bg); }
 
         .owner-filter { border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 12px; font-family: inherit; outline: none; background: white; color: var(--text-main); max-width: 130px; }
         .owner-filter:focus { border-color: var(--primary); }
@@ -96,11 +96,17 @@
 
         .gantt-body { display: flex; width: 100%; position: relative; }
 
-        .gantt-names { width: 300px; flex-shrink: 0; background: var(--card-bg); position: sticky; left: 0; z-index: 250; border-right: 1px solid var(--border); }
-        .name-header { height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-weight: 600; background: #faf9f6; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+        .gantt-names { width: 400px; flex-shrink: 0; background: var(--card-bg); position: sticky; left: 0; z-index: 250; border-right: 1px solid var(--border); }
+        .name-header { height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px 0 12px; font-weight: 600; background: #faf9f6; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; gap: 6px; }
+        .col-name { flex: 1; min-width: 0; }
+        .col-duration { width: 32px; flex-shrink: 0; display: flex; justify-content: flex-end; }
+        .col-owner { width: 28px; flex-shrink: 0; display: flex; justify-content: center; }
+        .col-actions { width: 44px; flex-shrink: 0; }
+        .owner-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: white; flex-shrink: 0; }
 
-        .name-cell { height: var(--row-height); border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 16px; cursor: pointer; background: white; transition: background 0.1s; font-size: 13px; gap: 6px; }
+        .name-cell { height: var(--row-height); border-bottom: 1px solid var(--border-light); display: flex; align-items: center; padding: 0 12px 0 16px; cursor: pointer; background: white; transition: background 0.1s; font-size: 13px; gap: 6px; }
         .name-cell:hover { background: #faf9f6; }
+        .name-cell.spotlight-row { background: var(--spotlight-light) !important; box-shadow: inset 3px 0 0 var(--spotlight); }
         .row-delete-btn { opacity: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: var(--text-muted); flex-shrink: 0; cursor: pointer; transition: all .15s; font-size: 13px; }
         .name-cell:hover .row-delete-btn { opacity: 1; }
         .row-delete-btn:hover { background: #fef3f2; color: #c0392b; }
@@ -108,12 +114,13 @@
         .name-cell:hover .row-locate-btn { opacity: 1; }
         .row-locate-btn:hover { background: var(--primary-light); color: var(--primary); }
         .gantt-bar-wrapper.spotlight .gantt-bar, .gantt-bar-wrapper.spotlight .gantt-milestone, .gantt-bar-wrapper.spotlight .gantt-summary-bar {
-            box-shadow: 0 0 0 3px white, 0 0 0 6px var(--primary), 0 6px 20px rgba(87,138,110,.4) !important;
+            box-shadow: 0 0 0 3px white, 0 0 0 6px var(--spotlight), 0 6px 20px rgba(37,99,235,.4) !important;
             animation: spotlightPulse 1s ease-in-out 3; z-index: 100 !important;
+            filter: none !important; opacity: 1 !important;
         }
         @keyframes spotlightPulse {
-            0%, 100% { box-shadow: 0 0 0 3px white, 0 0 0 6px var(--primary), 0 6px 20px rgba(87,138,110,.4); }
-            50% { box-shadow: 0 0 0 3px white, 0 0 0 10px var(--primary), 0 8px 28px rgba(87,138,110,.6); }
+            0%, 100% { box-shadow: 0 0 0 3px white, 0 0 0 6px var(--spotlight), 0 6px 20px rgba(37,99,235,.4); }
+            50% { box-shadow: 0 0 0 3px white, 0 0 0 10px var(--spotlight), 0 8px 28px rgba(37,99,235,.6); }
         }
         .name-cell.is-child { padding-left: 36px; color: var(--text-muted); }
         .name-cell.is-parent { background: #faf9f6; font-weight: 600; border-left: 3px solid var(--parent-dark); }
@@ -165,7 +172,7 @@
         .gantt-bar { width: 100%; height: 100%; background: var(--primary); border-radius: 6px; display: flex; align-items: center; padding: 0 8px; color: white; font-size: 11px; font-weight: 600; position: relative; overflow: hidden; box-shadow: var(--shadow-sm); cursor: pointer; transition: filter .1s; }
 
         /* Task tooltip */
-        .task-tooltip { position: fixed; background: #2c3531; color: #e8ede9; padding: 10px 14px; border-radius: var(--radius); font-size: 12px; pointer-events: none; z-index: 9999; box-shadow: 0 4px 20px rgba(0,0,0,.2); max-width: 260px; line-height: 1.6; display: none; }
+        .task-tooltip { position: fixed; background: #2c3531; color: #e8ede9; padding: 10px 14px; border-radius: var(--radius); font-size: 12px; pointer-events: none; z-index: 9999; box-shadow: 0 4px 20px rgba(0,0,0,.2); max-width: 320px; line-height: 1.6; display: none; }
         .task-tooltip strong { display: block; font-size: 13px; margin-bottom: 4px; color: white; }
         .task-tooltip .tt-row { display: flex; justify-content: space-between; gap: 16px; font-size: 11px; color: #a0b5a8; }
         .task-tooltip .tt-progress { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
@@ -178,10 +185,13 @@
         .stat-item { display: flex; align-items: center; gap: 5px; }
         .stat-value { font-weight: 700; color: var(--text-main); font-size: 12px; }
         .stat-dot { width: 7px; height: 7px; border-radius: 50%; }
-        .overdue-badge { background: rgba(196,154,60,.15); color: #8b6e1f; padding: 1px 8px; border-radius: 10px; font-weight: 600; font-size: 10px; }
+        .overdue-badge { background: rgba(220,38,38,.12); color: #b91c1c; padding: 1px 8px; border-radius: 10px; font-weight: 600; font-size: 10px; }
         .gantt-bar:hover { filter: brightness(1.06); }
+        .gantt-bar.status-not-started { background: var(--status-not-started) !important; }
+        .gantt-bar.status-in-progress { background: var(--status-in-progress) !important; }
         .gantt-bar.critical { background: var(--critical) !important; box-shadow: 0 0 0 1px rgba(196,154,60,.4), 0 1px 4px rgba(196,154,60,.2); }
-        .gantt-bar.completed { filter: saturate(0.35) brightness(1.2); opacity: 0.6; box-shadow: none; }
+        .gantt-bar.overdue { background: var(--status-overdue) !important; }
+        .gantt-bar.completed { background: var(--primary) !important; opacity: 0.72; box-shadow: none; }
         .progress-fill { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(0,0,0,.18); z-index: 1; border-radius: 6px 0 0 6px; }
         .bar-label { position: relative; z-index: 2; text-shadow: 0 1px 1px rgba(0,0,0,.15); }
 
@@ -229,7 +239,7 @@
         .marker-line { position: absolute; top: 56px; bottom: 0; width: 1px; z-index: 8; pointer-events: none; opacity: 0.7; }
         .marker-label { position: absolute; top: 58px; transform: translateX(-50%); color: white; padding: 2px 10px; border-radius: 0 0 5px 5px; font-size: 10px; font-weight: 600; white-space: nowrap; pointer-events: auto; cursor: pointer; background: var(--marker); z-index: 35; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
         .today-line { background: var(--today); z-index: 215 !important; width: 2px; }
-        .today-label { background: var(--today); top: 20px; left: 0; transform: translateX(-50%); border-radius: 4px; padding: 2px 10px; font-size: 10px; position: absolute; color: white; font-weight: 600; white-space: nowrap; z-index: 221; }
+        .today-label { background: var(--today); top: 30px; transform: translateX(-50%); border-radius: 4px; padding: 2px 10px; font-size: 10px; position: absolute; color: white; font-weight: 600; white-space: nowrap; z-index: 260; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
 
         /* ── Modals ── */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(44,58,51,.4); display: none; justify-content: center; align-items: center; z-index: 500; backdrop-filter: blur(3px); }
@@ -247,7 +257,7 @@
         body.exporting .gantt-viewport { overflow: visible !important; padding: 0 !important; width: max-content !important; }
         body.exporting .gantt-container { box-shadow: none !important; border-radius: 0 !important; width: max-content !important; }
         body.exporting .gantt-names { position: static !important; width: 420px !important; }
-        body.exporting .name-cell .task-info-block span { white-space: nowrap !important; overflow: visible !important; text-overflow: clip !important; }
+        body.exporting .name-cell .col-name span { white-space: nowrap !important; overflow: visible !important; text-overflow: clip !important; }
         body.exporting .row-locate-btn, body.exporting .row-delete-btn, body.exporting .drag-grip { display: none !important; }
         body.exporting .inline-add-row { display: none !important; }
         body.exporting .ctx-menu, body.exporting .collapse-toggle, body.exporting .resize-handle, body.exporting .dep-handle { display: none !important; }
@@ -1238,8 +1248,11 @@
                 ${overdue > 0 ? `<div class="overdue-badge">${overdue} overdue</div>` : ''}
             </div>
             <div style="display:flex;gap:14px;align-items:center;font-size:11px;color:var(--text-muted);border-left:1px solid var(--border);padding-left:14px;">
+                <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;background:var(--status-not-started);border-radius:2px;"></div>Not Started</div>
+                <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;background:var(--status-in-progress);border-radius:2px;"></div>In Progress</div>
                 <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;background:var(--critical);border-radius:2px;"></div>Critical</div>
-                <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;background:var(--primary);border-radius:2px;opacity:.4;filter:saturate(.35)"></div>Done</div>
+                <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;background:var(--status-overdue);border-radius:2px;"></div>Overdue</div>
+                <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;background:var(--primary);border-radius:2px;opacity:.72;"></div>Done</div>
                 <div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;background:var(--milestone);transform:rotate(45deg);"></div>Milestone</div>
                 <div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;background:var(--gate-color);transform:rotate(45deg);"></div>Gate</div>
                 <div style="display:flex;align-items:center;gap:5px;"><div style="width:16px;border-bottom:2px solid var(--today);"></div>Today</div>
@@ -1264,17 +1277,17 @@
             const blockedBy = task.deps.map(d => {
                 const src = proj.tasks.find(t => t.id == d.id);
                 if (!src) return null;
-                const shortName = src.name.length > 22 ? src.name.substring(0,22) + '…' : src.name;
-                return `<span style="color:#c9d5cd;">${esc(shortName)}</span> <span style="opacity:.6;font-size:9px;">${d.type}${d.lag?` ${d.lag>0?'+':''}${d.lag}d`:''}</span>`;
+                const lagText = d.lag ? ` ${d.lag>0?'+':''}${d.lag}d` : '';
+                return `<span style="color:#c9d5cd;">${esc(src.name)}</span><span style="display:inline-block;margin-left:6px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,.15);font-size:9px;font-weight:700;letter-spacing:.03em;vertical-align:middle;">${d.type}${lagText}</span>`;
             }).filter(Boolean);
-            if (blockedBy.length) depsHtml += `<div style="margin-top:5px;border-top:1px solid rgba(255,255,255,.1);padding-top:5px;font-size:10px;"><div style="color:#a0b5a8;margin-bottom:2px;">Blocked by</div>${blockedBy.map(b=>`<div>${b}</div>`).join('')}</div>`;
+            if (blockedBy.length) depsHtml += `<div style="margin-top:5px;border-top:1px solid rgba(255,255,255,.1);padding-top:5px;font-size:10px;"><div style="color:#a0b5a8;margin-bottom:3px;">Blocked by</div>${blockedBy.map(b=>`<div style="line-height:1.7;">${b}</div>`).join('')}</div>`;
         }
         let blocksList = [];
         if (proj) {
             const blocks = proj.tasks.filter(t => t.deps && t.deps.some(d => d.id == task.id));
             blocksList = blocks;
             if (blocks.length) {
-                const list = blocks.map(b => { const n = b.name.length > 24 ? b.name.substring(0,24) + '…' : b.name; return `<div style="color:#c9d5cd;">${esc(n)}</div>`; }).join('');
+                const list = blocks.map(b => `<div style="color:#c9d5cd;line-height:1.4;">${esc(b.name)}</div>`).join('');
                 depsHtml += `<div style="margin-top:4px;font-size:10px;"><div style="color:#a0b5a8;margin-bottom:2px;">Blocks</div>${list}</div>`;
             }
         }
@@ -1300,7 +1313,7 @@
     function moveTooltip(e) {
         if (!tooltip || tooltip.style.display === 'none') return;
         const x = e.clientX + 14, y = e.clientY - 10;
-        tooltip.style.left = Math.min(x, window.innerWidth - 280) + 'px';
+        tooltip.style.left = Math.min(x, window.innerWidth - 340) + 'px';
         tooltip.style.top = Math.min(y, window.innerHeight - 140) + 'px';
     }
     function hideTooltip() { if (tooltip) tooltip.style.display = 'none'; }
@@ -1308,6 +1321,7 @@
     document.addEventListener('mouseleave', hideTooltip);
 
     function renderGantt() {
+        try {
         const proj = db.projects.find(p => p.id === db.activeId);
         const namesC = document.getElementById('ganttNames'); const timeC = document.getElementById('ganttTimeline');
         
@@ -1323,7 +1337,16 @@
         let maxD = new Date(Math.max(...allD)); maxD.setDate(maxD.getDate() + 20);
         const totalDays = getDaysDiff(minD, maxD);
         const scale = document.getElementById('viewScale').value;
-        const pxPerDay = scale === 'days' ? 40 : (scale === 'weeks' ? 16 : 4);
+        // Monthly view is meant for coarse multi-year overviews, but a flat tiny px/day
+        // makes short projects (weeks-long) unreadable. Scale it by actual span instead:
+        // short spans get generous spacing, genuinely long timelines stay compact.
+        let monthlyPxPerDay;
+        if (totalDays < 60) monthlyPxPerDay = 14;
+        else if (totalDays < 180) monthlyPxPerDay = 9;
+        else if (totalDays < 400) monthlyPxPerDay = 5;
+        else monthlyPxPerDay = 3;
+        const pxPerDay = scale === 'days' ? 40 : (scale === 'weeks' ? 16 : monthlyPxPerDay);
+        window._currentPxPerDay = pxPerDay; // shared with drag-resize handler so it always matches the rendered scale
         const timelineWidth = totalDays * pxPerDay;
         
         let upper = `<div class="header-upper" style="width:${timelineWidth}px">`; let lower = `<div class="header-lower" style="width:${timelineWidth}px">`; let grid = `<div style="position:absolute;top:60px;left:0;bottom:60px;display:flex;z-index:1;pointer-events:none;">`;
@@ -1331,21 +1354,29 @@
         let cur = new Date(minD);
         if (scale === 'days') {
             let tempD = new Date(minD);
-            while (tempD <= maxD) {
+            let safetyOuter1 = 0;
+            while (tempD <= maxD && safetyOuter1++ < 2000) {
                 let currentMonth = tempD.getMonth(); let daysInMonth = 0; let counterDate = new Date(tempD);
-                while (counterDate <= maxD && counterDate.getMonth() === currentMonth) { daysInMonth++; counterDate.setDate(counterDate.getDate() + 1); }
+                let safetyInner1 = 0;
+                while (counterDate <= maxD && counterDate.getMonth() === currentMonth && safetyInner1++ < 31) { daysInMonth++; counterDate.setDate(counterDate.getDate() + 1); }
+                if (daysInMonth < 1) daysInMonth = 1; // guarantee forward progress no matter what
                 let blockW = daysInMonth * pxPerDay; upper += `<div class="time-block-group" style="width:${blockW}px">${tempD.toLocaleString('en-US', {month: 'long', year: 'numeric'})}</div>`; tempD.setDate(tempD.getDate() + daysInMonth);
             }
-            while (cur <= maxD) { const we = isWeekend(cur); lower += `<div class="time-block" style="width:${pxPerDay}px;${we?'background:#f0ede5;color:#b5a889;':''}">${cur.getDate()}</div>`; grid += `<div style="width:${pxPerDay}px;border-right:1px solid var(--border-light);height:100%;${we?'background:rgba(180,160,120,.06);':''}"></div>`; cur.setDate(cur.getDate() + 1); }
+            let safetyOuter2 = 0;
+            while (cur <= maxD && safetyOuter2++ < 4000) { const we = isWeekend(cur); lower += `<div class="time-block" style="width:${pxPerDay}px;${we?'background:#f0ede5;color:#b5a889;':''}">${cur.getDate()}</div>`; grid += `<div style="width:${pxPerDay}px;border-right:1px solid var(--border-light);height:100%;${we?'background:rgba(180,160,120,.06);':''}"></div>`; cur.setDate(cur.getDate() + 1); }
         } else if (scale === 'weeks') {
-            while(cur <= maxD) {
+            let safetyWeeks = 0;
+            while(cur <= maxD && safetyWeeks++ < 1000) {
                 let blockDays = 7; if (cur.getTime() + 7*86400000 > maxD.getTime()) blockDays = getDaysDiff(cur, maxD) + 1;
+                if (blockDays < 1) blockDays = 1; // guarantee forward progress
                 let isFirstWeek = cur.getDate() <= 7 || cur.getTime() === minD.getTime(); let labelTop = isFirstWeek ? cur.toLocaleString('en-US',{month:'short', year:'numeric'}) : '';
                 let blockW = blockDays * pxPerDay; upper += `<div class="time-block-group" style="width:${blockW}px">${labelTop}</div>`; lower += `<div class="time-block" style="width:${blockW}px">W${Math.ceil(cur.getDate()/7)}</div>`; grid += `<div style="width:${blockW}px;border-right:1px solid var(--border);height:100%;"></div>`; cur.setDate(cur.getDate() + blockDays);
             }
         } else { 
-            while(cur <= maxD) {
+            let safetyMonths = 0;
+            while(cur <= maxD && safetyMonths++ < 1000) {
                 let nextMonth = new Date(cur.getFullYear(), cur.getMonth() + 1, 1); let blockDays = getDaysDiff(cur, nextMonth); if (cur.getTime() + blockDays*86400000 > maxD.getTime()) blockDays = getDaysDiff(cur, maxD) + 1;
+                if (blockDays < 1) blockDays = 1; // guarantee forward progress even in edge cases
                 let blockW = blockDays * pxPerDay; upper += `<div class="time-block-group" style="width:${blockW}px">${cur.getFullYear()}</div>`; lower += `<div class="time-block" style="width:${blockW}px">${cur.toLocaleString('en-US',{month:'short'})}</div>`; grid += `<div style="width:${blockW}px;border-right:1px solid var(--border);height:100%;"></div>`; cur.setDate(cur.getDate() + blockDays);
             }
         }
@@ -1359,7 +1390,8 @@
         sortedHighlights.forEach(hl => {
             const hStart = new Date(hl.start).getTime(); const hEnd = new Date(hl.end).getTime();
             let lane = 0;
-            while (phaseLanes.some(p => p.lane === lane && !(hStart >= p.end || hEnd <= p.start))) lane++;
+            let safetyLane = 0;
+            while (phaseLanes.some(p => p.lane === lane && !(hStart >= p.end || hEnd <= p.start)) && safetyLane++ < 200) lane++;
             phaseLanes.push({ id: hl.id, lane, start: hStart, end: hEnd });
         });
         const maxLane = Math.max(0, ...phaseLanes.map(p => p.lane));
@@ -1415,9 +1447,9 @@
         });
 
         const taskCount = renderList.length;
-        namesC.innerHTML = `<div class="name-header" style="justify-content:space-between;"><span>Task Breakdown</span><span style="font-size:0.75rem;color:var(--text-muted);">${taskCount} task${taskCount!==1?'s':''}</span></div>`;
+        namesC.innerHTML = `<div class="name-header"><span class="col-name">Task Name (${taskCount})</span><span class="col-duration">Days</span><span class="col-owner" style="justify-content:center;">Who</span><span class="col-actions"></span></div>`;
         let rowHtml = `<div class="timeline-rows-container" style="width:${timelineWidth}px">`;
-        let svgDefs = `<defs><marker id="arrow-normal" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/></marker><marker id="arrow-critical" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#ef4444"/></marker></defs>`;
+        let svgDefs = `<defs><marker id="arrow-normal" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0, 7 2.5, 0 5" fill="#64748b"/></marker><marker id="arrow-critical" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0, 7 2.5, 0 5" fill="#ef4444"/></marker></defs>`;
         const pendingDeps = []; // collected here, drawn after DOM layout using measured element positions
 
         renderList.forEach((task, idx) => {
@@ -1426,7 +1458,13 @@
             const prog = parseInt(task.progress || 0);
             const todayD = new Date(); todayD.setHours(0,0,0,0);
             const isOverdue = prog < 100 && new Date(task.end) < todayD && !task.isParent && !task.isMilestone && !task.isGate;
-            const barClass = task.inCycle ? 'cycle-warn' : (task.isCritical ? 'critical' : (prog >= 100 ? 'completed' : (isOverdue ? 'overdue' : '')));
+            const hasNotStarted = prog === 0 && new Date(task.start) > todayD;
+            // Priority order: cycle error > done > overdue > critical > not-started > in-progress (default)
+            const barClass = task.inCycle ? 'cycle-warn'
+                : (prog >= 100 ? 'completed'
+                : (isOverdue ? 'overdue'
+                : (task.isCritical ? 'critical'
+                : (hasNotStarted ? 'status-not-started' : 'status-in-progress'))));
             const ownerColor = getOwnerColor(task.owner);
             const isCollapsed = collapsedParents.has(String(task.id));
             const durLabel = (task.start && task.end && !task.isParent) ? `<span class="dur-badge">${formatDuration(task.start, task.end)}</span>` : '';
@@ -1444,7 +1482,7 @@
                 onclick="if(!window.isDraggingList){selectedTaskId=${task.id};openTaskModal(${task.id})}"
                 onmouseenter="selectedTaskId=${task.id}"
                 oncontextmenu="showBarCtxMenu(event,${task.id})">
-                <div class="task-info-block" style="display:flex; align-items:center; gap:5px; min-width:0; flex:1;">
+                <div class="col-name" style="display:flex; align-items:center; gap:5px; min-width:0;">
                     <span class="drag-grip">⋮⋮</span>
                     ${collapseBtn}
                     ${displaySettings.ownerEnabled ? `<span class="owner-dot" style="background:${ownerColor};"></span>` : ''}
@@ -1452,12 +1490,12 @@
                     ${task.isGate ? '<span class="badge-gate">GATE</span>' : (task.isMilestone ? '<span class="badge-ms">◆</span>' : '')}
                     ${overdueIcon}
                 </div>
-                <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
-                    ${durLabel}
-                    <span style="font-size:11px;color:var(--text-muted);">${esc(task.owner||'')}</span>
+                <span class="col-duration">${durLabel}</span>
+                <span class="col-owner">${task.owner ? `<span class="owner-avatar" style="background:${ownerColor !== 'transparent' ? ownerColor : 'var(--text-muted)'};" title="${esc(task.owner)}">${esc(task.owner.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase())}</span>` : ''}</span>
+                <span class="col-actions" style="display:flex; align-items:center; justify-content:flex-end; gap:4px;">
                     <span class="row-locate-btn" title="Locate on chart" onclick="event.stopPropagation(); locateTask(${task.id})">◎</span>
                     <span class="row-delete-btn" title="Delete task" onclick="event.stopPropagation(); quickDeleteTask(${task.id})">✕</span>
-                </div>
+                </span>
             </div>`;
 
             // Baseline ghost bar
@@ -1476,10 +1514,17 @@
                 const msTooltipData = JSON.stringify({id:task.id,name:task.name,owner:task.owner||'',start:task.start,end:task.end,progress:prog,isCritical:task.isCritical,notes:task.notes||'',isOverdue,deps:task.deps||[],isGate:task.isGate}).replace(/"/g,'&quot;');
                 rowHtml += `<div class="timeline-row">${baselineHtml}<div class="gantt-bar-wrapper" style="left:${left}px;width:${task.isGate?28:24}px;" data-taskid="${task.id}">${handles}<div class="gantt-milestone ${barClass} ${gateClass}" onclick="openTaskModal(${task.id})" oncontextmenu="showBarCtxMenu(event,${task.id})" onmouseenter="showTooltip(event,${msTooltipData})" onmouseleave="hideTooltip()"></div>${gateLabel}</div></div>`;
             } else {
-                const ownerStyle = (displaySettings.ownerEnabled && ownerColor !== 'transparent') ? `background:${ownerColor};` : '';
-                const initials = task.owner ? task.owner.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase() : '';
                 const tooltipData = JSON.stringify({id:task.id,name:task.name,owner:task.owner||'',start:task.start,end:task.end,progress:prog,isCritical:task.isCritical,notes:task.notes||'',isOverdue,deps:task.deps||[]}).replace(/"/g,'&quot;');
-                rowHtml += `<div class="timeline-row">${baselineHtml}<div class="gantt-bar-wrapper" style="left:${left}px;width:${width}px;" data-taskid="${task.id}">${handles}${resizeHandles}<div class="gantt-bar ${barClass}" style="${ownerStyle}" onclick="openTaskModal(${task.id})" oncontextmenu="showBarCtxMenu(event,${task.id})" onmouseenter="showTooltip(event,${tooltipData})" onmouseleave="hideTooltip()"><div class="progress-fill" style="width:${prog}%"></div><span class="bar-label">${prog}%</span>${initials ? '<span class="bar-initials">'+initials+'</span>' : ''}</div></div></div>`;
+                // Below ~34px the "NN%" text can't fit cleanly inside the bar and gets clipped into
+                // a misleading fragment (e.g. "57%" clipped to just "5"). Show it just outside instead.
+                const MIN_LABEL_WIDTH = 34;
+                const labelHtml = width >= MIN_LABEL_WIDTH
+                    ? `<span class="bar-label">${prog}%</span>`
+                    : '';
+                const outsideLabelHtml = width < MIN_LABEL_WIDTH
+                    ? `<span class="bar-label-outside">${prog}%</span>`
+                    : '';
+                rowHtml += `<div class="timeline-row">${baselineHtml}<div class="gantt-bar-wrapper" style="left:${left}px;width:${width}px;" data-taskid="${task.id}">${handles}${resizeHandles}<div class="gantt-bar ${barClass}" onclick="openTaskModal(${task.id})" oncontextmenu="showBarCtxMenu(event,${task.id})" onmouseenter="showTooltip(event,${tooltipData})" onmouseleave="hideTooltip()"><div class="progress-fill" style="width:${prog}%"></div>${labelHtml}</div>${outsideLabelHtml}</div></div>`;
             }
 
             if(task.deps && task.deps.length > 0) {
@@ -1507,13 +1552,23 @@
                 <div class="marker-label" style="left:${p}px;" onclick="openMarkerModal('${m.id}')" title="Click to edit">${esc(m.label)}</div>`;
         });
         const todayOff = getDaysDiff(minD, new Date()) * pxPerDay;
-        markHtml += `<div class="marker-line today-line" style="left:${todayOff}px; background:var(--today);"><div class="today-label">Today</div></div>`;
+        markHtml += `<div class="marker-line today-line" style="left:${todayOff}px; background:var(--today);"></div><div class="today-label" style="left:${todayOff}px;">Today</div>`;
 
         timeC.innerHTML = upper + lower + grid + phaseLines + rowHtml + markHtml + phaseFooter;
 
         // Defer dependency line drawing to next animation frame — ensures browser has
         // completed layout so getBoundingClientRect() returns accurate positions
-        requestAnimationFrame(() => drawDependencyLines(pendingDeps, proj));
+        requestAnimationFrame(() => {
+            try {
+                drawDependencyLines(pendingDeps, proj);
+            } catch (err) {
+                console.error('Dependency line drawing failed (non-fatal):', err);
+            }
+        });
+        } catch (err) {
+            console.error('renderGantt failed:', err);
+            toast('Something went wrong rendering the chart — check the browser console for details', 'error', 6000);
+        }
     }
 
     function drawDependencyLines(pendingDeps, proj) {
@@ -1552,14 +1607,23 @@
             else { x1 = srcA.right; x2 = dstA.left; }
 
             const approachingFromLeft = x2 >= x1;
-            const arrowEnd = approachingFromLeft ? x2 - 3 : x2 + 3;
+            const arrowEnd = approachingFromLeft ? x2 - 2 : x2 + 2;
             let pathStr;
             if (Math.abs(y1 - y2) < 0.5) {
                 pathStr = `M ${x1} ${y1} L ${arrowEnd} ${y2}`;
             } else {
-                const gap = x2 - x1; const kick = 12;
-                const midx = gap >= kick * 2 ? x1 + gap / 2 : x1 + kick;
-                pathStr = `M ${x1} ${y1} L ${midx} ${y1} L ${midx} ${y2} L ${arrowEnd} ${y2}`;
+                const gap = x2 - x1;
+                if (gap >= 0) {
+                    // Forward dependency: always a clean single elbow, scaled proportionally
+                    // to the actual gap — no fixed "kick" that looks oversized at low zoom.
+                    const midx = x1 + gap / 2;
+                    pathStr = `M ${x1} ${y1} L ${midx} ${y1} L ${midx} ${y2} L ${arrowEnd} ${y2}`;
+                } else {
+                    // Backward dependency: needs to loop out before heading back left
+                    const kick = 10;
+                    const midx = x1 + kick;
+                    pathStr = `M ${x1} ${y1} L ${midx} ${y1} L ${midx} ${y2} L ${arrowEnd} ${y2}`;
+                }
             }
 
             const isCritArrow = dep.targetCritical && sourceTask.isCritical;
@@ -2121,13 +2185,23 @@
 
     function locateTask(id) {
         const wrapper = document.querySelector(`.gantt-bar-wrapper[data-taskid="${id}"]`);
+        const nameCell = document.querySelector(`.name-cell[data-taskid="${id}"]`);
         if (!wrapper) { toast('Task not visible — clear search filters or expand collapsed groups', 'info', 3000); return; }
+
+        // Toggle off if this exact task is already spotlighted
+        if (wrapper.classList.contains('spotlight')) {
+            wrapper.classList.remove('spotlight');
+            if (nameCell) nameCell.classList.remove('spotlight-row');
+            return;
+        }
+
         wrapper.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'center' });
+        if (nameCell) nameCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
         document.querySelectorAll('.gantt-bar-wrapper.spotlight').forEach(w => w.classList.remove('spotlight'));
-        // Re-trigger animation even if same task clicked twice in a row
-        void wrapper.offsetWidth;
+        document.querySelectorAll('.name-cell.spotlight-row').forEach(w => w.classList.remove('spotlight-row'));
         wrapper.classList.add('spotlight');
-        setTimeout(() => wrapper.classList.remove('spotlight'), 3200);
+        if (nameCell) nameCell.classList.add('spotlight-row');
+        // Stays highlighted until the locate button is clicked again — no click-away dismiss
     }
 
     function quickDeleteTask(id) {
@@ -2214,8 +2288,7 @@
         const proj = db.projects.find(p => p.id === db.activeId);
         const task = proj.tasks.find(t => t.id == taskId);
         if (!task) return;
-        const scale = document.getElementById('viewScale').value;
-        const pxPerDay = scale === 'days' ? 40 : (scale === 'weeks' ? 16 : 4);
+        const pxPerDay = window._currentPxPerDay || 40;
         const wrapper = handle.closest('.gantt-bar-wrapper');
         resizeCtx = { taskId, side, task, pxPerDay, startX: e.clientX, origLeft: parseFloat(wrapper.style.left), origWidth: parseFloat(wrapper.style.width), wrapper };
         document.body.style.cursor = 'ew-resize';
