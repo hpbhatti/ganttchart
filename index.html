@@ -104,6 +104,17 @@
         .row-delete-btn { opacity: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: var(--text-muted); flex-shrink: 0; cursor: pointer; transition: all .15s; font-size: 13px; }
         .name-cell:hover .row-delete-btn { opacity: 1; }
         .row-delete-btn:hover { background: #fef3f2; color: #c0392b; }
+        .row-locate-btn { opacity: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: var(--text-muted); flex-shrink: 0; cursor: pointer; transition: all .15s; font-size: 12px; }
+        .name-cell:hover .row-locate-btn { opacity: 1; }
+        .row-locate-btn:hover { background: var(--primary-light); color: var(--primary); }
+        .gantt-bar-wrapper.spotlight .gantt-bar, .gantt-bar-wrapper.spotlight .gantt-milestone, .gantt-bar-wrapper.spotlight .gantt-summary-bar {
+            box-shadow: 0 0 0 3px white, 0 0 0 6px var(--primary), 0 6px 20px rgba(87,138,110,.4) !important;
+            animation: spotlightPulse 1s ease-in-out 3; z-index: 100 !important;
+        }
+        @keyframes spotlightPulse {
+            0%, 100% { box-shadow: 0 0 0 3px white, 0 0 0 6px var(--primary), 0 6px 20px rgba(87,138,110,.4); }
+            50% { box-shadow: 0 0 0 3px white, 0 0 0 10px var(--primary), 0 8px 28px rgba(87,138,110,.6); }
+        }
         .name-cell.is-child { padding-left: 36px; color: var(--text-muted); }
         .name-cell.is-parent { background: #faf9f6; font-weight: 600; border-left: 3px solid var(--parent-dark); }
         .name-cell.drag-over { border-top: 2px solid var(--primary); background-color: var(--primary-light); }
@@ -235,7 +246,9 @@
         /* ── Export ── */
         body.exporting .gantt-viewport { overflow: visible !important; padding: 0 !important; width: max-content !important; }
         body.exporting .gantt-container { box-shadow: none !important; border-radius: 0 !important; width: max-content !important; }
-        body.exporting .gantt-names { position: static !important; }
+        body.exporting .gantt-names { position: static !important; width: 420px !important; }
+        body.exporting .name-cell .task-info-block span { white-space: nowrap !important; overflow: visible !important; text-overflow: clip !important; }
+        body.exporting .row-locate-btn, body.exporting .row-delete-btn, body.exporting .drag-grip { display: none !important; }
         body.exporting .inline-add-row { display: none !important; }
         body.exporting .ctx-menu, body.exporting .collapse-toggle, body.exporting .resize-handle, body.exporting .dep-handle { display: none !important; }
 
@@ -1442,6 +1455,7 @@
                 <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
                     ${durLabel}
                     <span style="font-size:11px;color:var(--text-muted);">${esc(task.owner||'')}</span>
+                    <span class="row-locate-btn" title="Locate on chart" onclick="event.stopPropagation(); locateTask(${task.id})">◎</span>
                     <span class="row-delete-btn" title="Delete task" onclick="event.stopPropagation(); quickDeleteTask(${task.id})">✕</span>
                 </div>
             </div>`;
@@ -1715,7 +1729,7 @@
     function exportPDF() {
         const btn = document.getElementById('exportBtn'); btn.innerText = "⏳ Exporting..."; btn.disabled = true;
         let maxRight = 0; document.querySelectorAll('.gantt-bar-wrapper, .marker-line, .gantt-highlight-zone').forEach(el => { let right = parseFloat(el.style.left) + (el.offsetWidth || 0); if (!isNaN(right) && right > maxRight) maxRight = right; });
-        const targetTimelineWidth = maxRight > 0 ? maxRight + 120 : 800; const totalExportWidth = targetTimelineWidth + 340; 
+        const targetTimelineWidth = maxRight > 0 ? maxRight + 120 : 800; const totalExportWidth = targetTimelineWidth + 420; 
         const exportArea = document.getElementById('ganttExportArea'); const timelineArea = document.getElementById('ganttTimeline');
         document.body.classList.add('exporting');
         exportArea.style.width = totalExportWidth + 'px'; exportArea.style.minWidth = totalExportWidth + 'px'; timelineArea.style.width = targetTimelineWidth + 'px'; timelineArea.style.minWidth = targetTimelineWidth + 'px';
@@ -2105,6 +2119,17 @@
         saveDB(); renderGantt();
     }
 
+    function locateTask(id) {
+        const wrapper = document.querySelector(`.gantt-bar-wrapper[data-taskid="${id}"]`);
+        if (!wrapper) { toast('Task not visible — clear search filters or expand collapsed groups', 'info', 3000); return; }
+        wrapper.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'center' });
+        document.querySelectorAll('.gantt-bar-wrapper.spotlight').forEach(w => w.classList.remove('spotlight'));
+        // Re-trigger animation even if same task clicked twice in a row
+        void wrapper.offsetWidth;
+        wrapper.classList.add('spotlight');
+        setTimeout(() => wrapper.classList.remove('spotlight'), 3200);
+    }
+
     function quickDeleteTask(id) {
         if (!confirm('Delete this task?')) return;
         const proj = db.projects.find(p => p.id === db.activeId);
@@ -2295,11 +2320,11 @@
             let right = parseFloat(el.style.left) + (el.offsetWidth || 0);
             if (!isNaN(right) && right > maxRight) maxRight = right;
         });
-        const totalW = (maxRight > 0 ? maxRight + 160 : 800) + 340;
+        const totalW = (maxRight > 0 ? maxRight + 160 : 800) + 420;
         const totalH = exportArea.scrollHeight || exportArea.offsetHeight || 600;
 
         // Use html2canvas to capture, then embed as image in SVG for transparent bg
-        const targetTimelineWidth = totalW - 340;
+        const targetTimelineWidth = totalW - 420;
         const timelineArea = document.getElementById('ganttTimeline');
         document.body.classList.add('exporting');
         exportArea.style.width = totalW + 'px'; exportArea.style.minWidth = totalW + 'px';
@@ -2342,7 +2367,7 @@
             if (!isNaN(right) && right > maxRight) maxRight = right;
         });
         const targetTimelineWidth = (maxRight > 0 ? maxRight + 160 : 800);
-        const totalW = targetTimelineWidth + 340;
+        const totalW = targetTimelineWidth + 420;
         const timelineArea = document.getElementById('ganttTimeline');
 
         document.body.classList.add('exporting');
