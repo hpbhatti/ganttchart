@@ -673,10 +673,10 @@
             }
             // Pass 2: update each task with resolved parent_id / deps (dbId-translated) + core fields
             for (const [idx, t] of proj.tasks.entries()) {
-                const parentTask = t.parentId ? proj.tasks.find(x => x.id === t.parentId) : null;
+                const parentTask = t.parentId ? proj.tasks.find(x => x.id == t.parentId) : null;
                 const depsForDb = (t.deps || []).map(d => {
-                    const srcTask = proj.tasks.find(x => x.id === d.id);
-                    return srcTask && srcTask._dbId ? { id: srcTask._dbId, type: d.type, lag: d.lag } : null;
+                    const srcTask = proj.tasks.find(x => x.id == d.id);
+                    return srcTask && srcTask._dbId ? { id: srcTask._dbId, type: d.type, lag: d.lag || 0 } : null;
                 }).filter(Boolean);
                 await sb.from('tasks').update({
                     name: t.name, owner: t.owner || '', start_date: t.start, end_date: t.end,
@@ -1486,10 +1486,9 @@
 
         timeC.innerHTML = upper + lower + grid + phaseLines + rowHtml + markHtml + phaseFooter;
 
-        // Draw dependency lines using ACTUAL rendered element positions (measured after layout),
-        // not calculated from date math — this guarantees correct alignment regardless of
-        // CSS transforms, rotation, or box-model quirks on milestones/gates.
-        drawDependencyLines(pendingDeps, proj);
+        // Defer dependency line drawing to next animation frame — ensures browser has
+        // completed layout so getBoundingClientRect() returns accurate positions
+        requestAnimationFrame(() => drawDependencyLines(pendingDeps, proj));
     }
 
     function drawDependencyLines(pendingDeps, proj) {
@@ -1578,7 +1577,7 @@
             const svgRect = svg.getBoundingClientRect(); const handleRect = e.target.getBoundingClientRect();
 
             dragCtx = {
-                sourceId: wrapper.dataset.taskid, sourceType: e.target.classList.contains('left') ? 'S' : 'F',
+                sourceId: Number(wrapper.dataset.taskid), sourceType: e.target.classList.contains('left') ? 'S' : 'F',
                 startX: handleRect.left + handleRect.width/2 - svgRect.left, startY: handleRect.top + handleRect.height/2 - svgRect.top, svg: svg
             };
 
@@ -1605,7 +1604,7 @@
         if (!dragCtx) return;
         if (e.target.classList.contains('dep-handle')) {
             const wrapper = e.target.closest('.gantt-bar-wrapper');
-            const targetId = wrapper.dataset.taskid; const targetType = e.target.classList.contains('left') ? 'S' : 'F';
+            const targetId = Number(wrapper.dataset.taskid); const targetType = e.target.classList.contains('left') ? 'S' : 'F';
 
             if (targetId && targetId !== dragCtx.sourceId) {
                 const depType = dragCtx.sourceType + targetType;
