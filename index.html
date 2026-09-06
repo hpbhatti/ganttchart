@@ -46,7 +46,26 @@
         .baseline-bar { position: absolute; height: 5px; background: var(--baseline); border-radius: 3px; bottom: 2px; z-index: 5; opacity: 0.4; pointer-events: none; }
 
         .progress-slider-wrap { display: flex; align-items: center; gap: 10px; }
-        .progress-slider-wrap input[type=range] { flex: 1; accent-color: var(--primary); height: 6px; }
+        .progress-slider-wrap input[type=range] {
+            flex: 1; height: 6px; margin: 0; padding: 0;
+            -webkit-appearance: none; appearance: none;
+            background: transparent; cursor: pointer;
+        }
+        .progress-slider-wrap input[type=range]::-webkit-slider-runnable-track {
+            height: 6px; border-radius: 3px; background: var(--border);
+        }
+        .progress-slider-wrap input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; margin-top: -5px;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: var(--primary); border: none; cursor: pointer;
+        }
+        .progress-slider-wrap input[type=range]::-moz-range-track {
+            height: 6px; border-radius: 3px; background: var(--border);
+        }
+        .progress-slider-wrap input[type=range]::-moz-range-thumb {
+            width: 16px; height: 16px; border-radius: 50%;
+            background: var(--primary); border: none; cursor: pointer;
+        }
         .progress-val { font-size: 13px; font-weight: 700; min-width: 36px; text-align: right; color: var(--primary); }
 
         .gantt-bar.cycle-warn { background: repeating-linear-gradient(45deg, #c0392b, #c0392b 8px, #a93226 8px, #a93226 16px) !important; animation: cyclepulse 1s infinite; }
@@ -454,7 +473,7 @@
     </div><div class="form-group" style="width:50%;"><label>Parent Task</label><select id="taskParentId"><option value="">None</option></select></div></div>
     <datalist id="ownerSuggestions"></datalist>
     <div style="display:flex; gap:10px;"><div class="form-group" style="width:50%;"><label>Start Date</label><input type="date" id="taskStart"></div><div class="form-group" style="width:50%;"><label>End Date</label><input type="date" id="taskEnd"></div></div>
-    <div style="display:flex; gap:10px; align-items:flex-end;"><div class="form-group" style="width:50%;"><label>Progress</label><div class="progress-slider-wrap"><input type="range" id="taskProgress" min="0" max="100" value="0" oninput="document.getElementById('progressVal').textContent=this.value+'%'"><span class="progress-val" id="progressVal">0%</span></div></div><div class="form-group" style="width:50%; margin-bottom: 20px;"><label style="cursor:pointer;display:flex;align-items:center;gap:12px"><span><input type="checkbox" id="taskIsMilestone"> Milestone</span><span style="color:#e8590c"><input type="checkbox" id="taskIsGate"> Gate</span></label></div></div>
+    <div style="display:flex; gap:10px; align-items:flex-end;"><div class="form-group" style="width:50%;"><label>Progress</label><div class="progress-slider-wrap"><input type="range" id="taskProgress" min="0" max="100" value="0" oninput="syncProgressFromSlider(this.value)"><input type="number" id="progressValInput" min="0" max="100" value="0" style="width:52px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:inherit;font-size:13px;font-weight:700;color:var(--primary);text-align:right;" oninput="syncProgressFromNumber(this.value)"><span style="font-size:13px;font-weight:700;color:var(--primary);">%</span></div></div><div class="form-group" style="width:50%; margin-bottom: 20px;"><label style="cursor:pointer;display:flex;align-items:center;gap:12px"><span><input type="checkbox" id="taskIsMilestone"> Milestone</span><span style="color:#e8590c"><input type="checkbox" id="taskIsGate"> Gate</span></label></div></div>
     <div class="form-group"><label>Notes</label><textarea id="taskNotes" rows="2" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:0.85rem; resize:vertical;" placeholder="Optional notes…"></textarea></div>
     <div class="form-group" style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid var(--border);"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><label style="margin:0;">Predecessors</label><div style="display:flex;gap:6px;"><button type="button" class="secondary small" onclick="clearAllDependencies()" style="color:#c0392b;border-color:#fecaca;">Clear all</button><button type="button" class="secondary small" onclick="addDependencyRow()">+ Add</button></div></div><div id="dependencyContainer"></div></div>
     <div style="display:flex; justify-content:space-between; margin-top:20px;"><button class="secondary" onclick="deleteTask()" style="color:red;">Delete</button><div><button class="secondary" onclick="closeModals()">Cancel</button><button class="primary" onclick="saveTask()">Save</button></div></div></div></div>
@@ -1508,8 +1527,10 @@
             const width = (getDaysDiff(new Date(task.start), new Date(task.end)) + 1) * pxPerDay;
             const prog = parseInt(task.progress || 0);
             const todayD = new Date(); todayD.setHours(0,0,0,0);
-            const isOverdue = prog < 100 && new Date(task.end) < todayD && !task.isParent && !task.isMilestone && !task.isGate;
-            const hasNotStarted = prog === 0 && new Date(task.start) > todayD;
+            const isPastEnd = new Date(task.end) < todayD;
+            const isPastStartWithNoProgress = prog === 0 && new Date(task.start) < todayD;
+            const isOverdue = prog < 100 && (isPastEnd || isPastStartWithNoProgress) && !task.isParent && !task.isMilestone && !task.isGate;
+            const hasNotStarted = prog === 0 && new Date(task.start) >= todayD;
             // Priority order: cycle error > done > overdue > critical > not-started > in-progress (default)
             const barClass = task.inCycle ? 'cycle-warn'
                 : (prog >= 100 ? 'completed'
@@ -2113,6 +2134,15 @@
 
     function taskLabel(t) { return t.owner ? t.name + ' (' + t.owner + ')' : t.name; }
 
+    function syncProgressFromSlider(val) {
+        document.getElementById('progressValInput').value = val;
+    }
+    function syncProgressFromNumber(val) {
+        let n = parseInt(val); if (isNaN(n)) n = 0; if (n < 0) n = 0; if (n > 100) n = 100;
+        document.getElementById('taskProgress').value = n;
+        document.getElementById('progressValInput').value = n;
+    }
+
     function openTaskModal(id = null) {
         const proj = db.projects.find(p => p.id === db.activeId);
         const parS = document.getElementById('taskParentId');
@@ -2146,7 +2176,7 @@
             // Store working-day duration for auto-preserve
             _taskOrigDuration = t.start && t.end ? calDaysToWorkingDays(t.start, getDaysDiff(new Date(t.start), new Date(t.end)) + 1) : 5;
             document.getElementById('taskProgress').value = t.progress || 0;
-            document.getElementById('progressVal').textContent = (t.progress || 0) + '%';
+            document.getElementById('progressValInput').value = t.progress || 0;
             document.getElementById('taskParentId').value = t.parentId; document.getElementById('taskIsMilestone').checked = t.isMilestone;
             document.getElementById('taskIsGate').checked = !!t.isGate;
             document.getElementById('taskNotes').value = t.notes || '';
@@ -2156,7 +2186,7 @@
             _taskOrigDuration = 5; // default 5 working days
             document.getElementById('taskId').value = ""; document.getElementById('taskName').value = "";
             document.getElementById('taskOwner').value = ""; ownerSelect.value = ""; document.getElementById('taskProgress').value = "0";
-            document.getElementById('progressVal').textContent = '0%';
+            document.getElementById('progressValInput').value = 0;
             document.getElementById('taskStart').value = formatDate(today);
             document.getElementById('taskEnd').value = formatDate(nextWeek);
             document.getElementById('taskIsMilestone').checked = false;
@@ -2215,10 +2245,14 @@
         if (!name) { nameInput.focus(); return; }
         const today = formatDate(new Date()); const nextWeek = formatDate(new Date(Date.now() + 7*86400000));
         const proj = db.projects.find(p => p.id === db.activeId);
-        proj.tasks.push({ id: Date.now(), name: name, owner: ownerInput.value.trim(), start: today, end: nextWeek, progress: 0, parentId: '', deps: [], isMilestone: false });
+        const newId = Date.now();
+        proj.tasks.push({ id: newId, name: name, owner: ownerInput.value.trim(), start: today, end: nextWeek, progress: 0, parentId: '', deps: [], isMilestone: false });
         saveDB(); renderGantt(); renderSidebar();
-        // Refocus for rapid entry
-        setTimeout(() => { const ni = document.getElementById('inlineTaskName'); if (ni) ni.focus(); }, 50);
+        // Clear the quick-add row so it's ready for the next entry
+        nameInput.value = ''; ownerInput.value = '';
+        // Open the full editor immediately, pre-filled, so progress/milestone/dates
+        // can be set in one continuous flow instead of re-locating the task afterward
+        openTaskModal(newId);
     }
 
     // === Right-Click Context Menu ===
