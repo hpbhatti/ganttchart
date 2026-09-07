@@ -115,10 +115,11 @@
 
         .gantt-body { display: flex; width: 100%; position: relative; }
 
-        .gantt-names { width: 400px; flex-shrink: 0; background: var(--card-bg); position: sticky; left: 0; z-index: 250; border-right: 1px solid var(--border); }
+        .gantt-names { width: 448px; flex-shrink: 0; background: var(--card-bg); position: sticky; left: 0; z-index: 250; border-right: 1px solid var(--border); }
         .name-header { height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px 0 12px; font-weight: 600; background: #faf9f6; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; gap: 6px; }
         .col-name { flex: 1; min-width: 0; }
         .col-duration { width: 32px; flex-shrink: 0; display: flex; justify-content: flex-end; }
+        .col-variance { width: 50px; flex-shrink: 0; display: flex; justify-content: center; align-items: center; font-size: 10.5px; font-weight: 700; }
         .col-owner { width: 28px; flex-shrink: 0; display: flex; justify-content: center; }
         .col-actions { width: 44px; flex-shrink: 0; }
         .owner-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: white; flex-shrink: 0; }
@@ -275,7 +276,7 @@
         /* ── Export ── */
         body.exporting .gantt-viewport { overflow: visible !important; padding: 0 !important; width: max-content !important; }
         body.exporting .gantt-container { box-shadow: none !important; border-radius: 0 !important; width: max-content !important; }
-        body.exporting .gantt-names { position: static !important; width: 420px !important; }
+        body.exporting .gantt-names { position: static !important; width: 468px !important; }
         body.exporting .name-cell .col-name span { white-space: nowrap !important; overflow: visible !important; text-overflow: clip !important; }
         body.exporting .row-locate-btn, body.exporting .row-delete-btn, body.exporting .drag-grip { display: none !important; }
         body.exporting .inline-add-row { display: none !important; }
@@ -547,6 +548,16 @@
 
             <div style="background:#faf9f6; padding:14px; border-radius:var(--radius); border:1px solid var(--border);">
                 <label style="margin:0; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500;"><input type="checkbox" id="settingsShowBaseline" checked> Show baseline ghost bars</label>
+            </div>
+
+            <div style="background:#faf9f6; padding:14px; border-radius:var(--radius); border:1px solid var(--border); margin-top:12px;">
+                <label style="margin:0 0 10px; font-weight:700; font-size:13px; display:block;">Work Week</label>
+                <div style="display:flex; gap:6px; margin-bottom:10px;">
+                    <button type="button" class="secondary small" onclick="applyWeekendPreset('saudi')" style="flex:1;">Saudi (Fri–Sat off)</button>
+                    <button type="button" class="secondary small" onclick="applyWeekendPreset('standard')" style="flex:1;">Standard (Sat–Sun off)</button>
+                </div>
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">Or pick custom days off:</div>
+                <div id="weekdayCheckboxes" style="display:flex; gap:4px; flex-wrap:wrap;"></div>
             </div>
 
             <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
@@ -1034,8 +1045,7 @@
 
     // === Owner Color Palette ===
     // === Saudi working calendar (Sun–Thu work, Fri–Sat weekend) ===
-    const WEEKEND_DAYS = [5, 6]; // Friday=5, Saturday=6
-    function isWeekend(d) { return WEEKEND_DAYS.includes(new Date(d).getDay()); }
+    function isWeekend(d) { return displaySettings.weekendDays.includes(new Date(d).getDay()); }
     function addWorkingDays(startDate, numDays) {
         const d = new Date(startDate); let added = 0; const dir = numDays >= 0 ? 1 : -1; const abs = Math.abs(numDays);
         while (added < abs) { d.setDate(d.getDate() + dir); if (!isWeekend(d)) added++; }
@@ -1054,6 +1064,17 @@
     function skipWeekend(d) { // Advance past any weekend
         const nd = new Date(d); while (isWeekend(nd)) nd.setDate(nd.getDate() + 1); return nd;
     }
+    function workingDaysBetween(dateA, dateB) {
+        // Signed working-day difference: positive if dateB is after dateA, negative if before, 0 if equal.
+        if (dateA === dateB) return 0;
+        const a = new Date(dateA), b = new Date(dateB);
+        if (a.getTime() === b.getTime()) return 0;
+        const sign = b > a ? 1 : -1;
+        const start = sign > 0 ? a : b, end = sign > 0 ? b : a;
+        let count = 0; const d = new Date(start);
+        while (d < end) { d.setDate(d.getDate() + 1); if (!isWeekend(d)) count++; }
+        return count * sign;
+    }
     function formatDuration(startStr, endStr) {
         const s = new Date(startStr), e = new Date(endStr);
         const calD = getDaysDiff(s, e) + 1;
@@ -1069,7 +1090,8 @@
 
     const OWNER_COLORS = ['#2563eb','#7c3aed','#0891b2','#059669','#d97706','#dc2626','#db2777','#4f46e5','#0d9488','#ca8a04','#9333ea','#e11d48'];
     const SETTINGS_KEY = 'gantt_display_settings';
-    let displaySettings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || { ownerEnabled: true, borderWidth: 4, ownerColors: {}, showBaseline: true };
+    let displaySettings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || { ownerEnabled: true, borderWidth: 4, ownerColors: {}, showBaseline: true, weekendDays: [5, 6] };
+    if (!displaySettings.weekendDays) displaySettings.weekendDays = [5, 6]; // migrate older saved settings, default Fri-Sat
     if (displaySettings.showBaseline === undefined) displaySettings.showBaseline = true;
     // Migrate old non-normalized keys
     const migratedColors = {};
@@ -1303,6 +1325,16 @@
         const overdue = leaf.filter(t => parseInt(t.progress||0) < 100 && new Date(t.end) < today).length;
         const avgProg = total ? Math.round(leaf.reduce((s,t) => s + parseInt(t.progress||0), 0) / total) : 0;
         const critEnd = tasks.filter(t => t.isCritical && t.end).sort((a,b) => new Date(b.end)-new Date(a.end))[0];
+        let baselineStatHtml = '';
+        const tasksWithBaseline = leaf.filter(t => t.baselineEnd);
+        if (tasksWithBaseline.length && leaf.length) {
+            const liveProjectEnd = leaf.reduce((max, t) => new Date(t.end) > max ? new Date(t.end) : max, new Date(leaf[0].end));
+            const baselineProjectEnd = tasksWithBaseline.reduce((max, t) => new Date(t.baselineEnd) > max ? new Date(t.baselineEnd) : max, new Date(tasksWithBaseline[0].baselineEnd));
+            const v = workingDaysBetween(formatDate(baselineProjectEnd), formatDate(liveProjectEnd));
+            if (v === 0) baselineStatHtml = `<div class="stat-item">Baseline&nbsp;<span class="stat-value" style="color:var(--text-muted);">On track</span></div>`;
+            else if (v > 0) baselineStatHtml = `<div class="stat-item">Baseline&nbsp;<span class="stat-value" style="color:var(--status-overdue);">+${v}d</span></div>`;
+            else baselineStatHtml = `<div class="stat-item">Baseline&nbsp;<span class="stat-value" style="color:var(--primary);">${v}d</span></div>`;
+        }
         bar.innerHTML = `
             <div style="display:flex;gap:18px;align-items:center;flex:1;">
                 <div class="stat-item"><span class="stat-dot" style="background:var(--primary)"></span><span class="stat-value">${total}</span>&nbsp;tasks</div>
@@ -1310,6 +1342,7 @@
                 <div class="stat-item"><span class="stat-dot" style="background:var(--critical)"></span><span class="stat-value">${critical}</span>&nbsp;critical</div>
                 <div class="stat-item">Progress&nbsp;<span class="stat-value">${avgProg}%</span></div>
                 ${critEnd ? `<div class="stat-item">Ends&nbsp;<span class="stat-value">${critEnd.end}</span></div>` : ''}
+                ${baselineStatHtml}
                 ${overdue > 0 ? `<div class="overdue-badge">${overdue} overdue</div>` : ''}
             </div>
             <div style="display:flex;gap:14px;align-items:center;font-size:11px;color:var(--text-muted);border-left:1px solid var(--border);padding-left:14px;">
@@ -1334,7 +1367,7 @@
         const today = new Date(); today.setHours(0,0,0,0);
         const end = new Date(task.end); const prog = parseInt(task.progress||0);
         const overdue = prog < 100 && end < today;
-        const dur = getDaysDiff(new Date(task.start), new Date(task.end)) + 1;
+        const dur = task.start && task.end ? calDaysToWorkingDays(task.start, getDaysDiff(new Date(task.start), new Date(task.end)) + 1) : 0;
 
         // Feature 6: Dependency details
         let depsHtml = '';
@@ -1486,8 +1519,7 @@
                 sprintInfo = `<span style="font-weight:400;font-size:10px;opacity:.8;margin-left:6px;">${totalSprints} sprints × ${hl.sprintDays}d each</span>`;
             }
             const methColor = isAgile ? '#8b6e1f' : '#3d6b52';
-            const methBg = isAgile ? 'rgba(196,154,60,.15)' : 'rgba(87,138,110,.15)';
-            const methTag = `<span style="font-size:9px;font-weight:700;padding:1px 7px;border-radius:3px;margin-left:8px;background:${methBg};color:${methColor};letter-spacing:.04em;">${isAgile ? 'AGILE' : 'WATERFALL'}</span>`;
+            const methTag = `<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px;background:rgba(255,255,255,.92);color:${methColor};letter-spacing:.04em;">${isAgile ? 'AGILE' : 'WATERFALL'}</span>`;
             phaseFooter += `
                 <div class="phase-bracket-container" style="left:${off*pxPerDay}px;width:${dur*pxPerDay}px;">
                     <div class="phase-bracket-line"></div>
@@ -1517,7 +1549,7 @@
         });
 
         const taskCount = renderList.length;
-        namesC.innerHTML = `<div class="name-header"><span class="col-name">Task Name (${taskCount})</span><span class="col-duration">Days</span><span class="col-owner" style="justify-content:center;">Who</span><span class="col-actions"></span></div>`;
+        namesC.innerHTML = `<div class="name-header"><span class="col-name">Task Name (${taskCount})</span><span class="col-duration">Days</span><span class="col-variance" title="Variance vs baseline">Δ</span><span class="col-owner" style="justify-content:center;">Who</span><span class="col-actions"></span></div>`;
         let rowHtml = `<div class="timeline-rows-container" style="width:${timelineWidth}px">`;
         let svgDefs = `<defs><marker id="arrow-normal" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0, 7 2.5, 0 5" fill="#64748b"/></marker><marker id="arrow-critical" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0, 7 2.5, 0 5" fill="#ef4444"/></marker></defs>`;
         const pendingDeps = []; // collected here, drawn after DOM layout using measured element positions
@@ -1540,6 +1572,13 @@
             const ownerColor = getOwnerColor(task.owner);
             const isCollapsed = collapsedParents.has(String(task.id));
             const durLabel = (task.start && task.end && !task.isParent) ? `<span class="dur-badge">${formatDuration(task.start, task.end)}</span>` : '';
+            let varianceLabel = '';
+            if (task.baselineEnd && task.end && !task.isParent) {
+                const v = workingDaysBetween(task.baselineEnd, task.end);
+                if (v === 0) varianceLabel = `<span style="color:var(--text-muted);font-weight:500;font-size:9px;">On track</span>`;
+                else if (v > 0) varianceLabel = `<span style="color:var(--status-overdue);">+${v}d</span>`;
+                else varianceLabel = `<span style="color:var(--primary);">${v}d</span>`;
+            }
             
             const handles = `<div class="dep-handle left"></div><div class="dep-handle right"></div>`;
             const resizeHandles = task.isParent || task.isMilestone ? '' : `<div class="resize-handle left" data-taskid="${task.id}" data-side="left"></div><div class="resize-handle right" data-taskid="${task.id}" data-side="right"></div>`;
@@ -1563,6 +1602,7 @@
                     ${overdueIcon}
                 </div>
                 <span class="col-duration">${durLabel}</span>
+                <span class="col-variance">${varianceLabel}</span>
                 <span class="col-owner">${task.owner ? `<span class="owner-avatar" style="background:${ownerColor !== 'transparent' ? ownerColor : 'var(--text-muted)'};" title="${esc(task.owner)}">${esc(task.owner.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase())}</span>` : ''}</span>
                 <span class="col-actions" style="display:flex; align-items:center; justify-content:flex-end; gap:4px;">
                     <span class="row-locate-btn" title="Locate on chart" onclick="event.stopPropagation(); locateTask(${task.id})">◎</span>
@@ -1865,7 +1905,7 @@
     function exportPDF() {
         const btn = document.getElementById('exportBtn'); btn.innerText = "⏳ Exporting..."; btn.disabled = true;
         let maxRight = 0; document.querySelectorAll('.gantt-bar-wrapper, .marker-line, .gantt-highlight-zone').forEach(el => { let right = parseFloat(el.style.left) + (el.offsetWidth || 0); if (!isNaN(right) && right > maxRight) maxRight = right; });
-        const targetTimelineWidth = maxRight > 0 ? maxRight + 120 : 800; const totalExportWidth = targetTimelineWidth + 420; 
+        const targetTimelineWidth = maxRight > 0 ? maxRight + 120 : 800; const totalExportWidth = targetTimelineWidth + 468; 
         const exportArea = document.getElementById('ganttExportArea'); const timelineArea = document.getElementById('ganttTimeline');
         document.body.classList.add('exporting');
         exportArea.style.width = totalExportWidth + 'px'; exportArea.style.minWidth = totalExportWidth + 'px'; timelineArea.style.width = targetTimelineWidth + 'px'; timelineArea.style.minWidth = targetTimelineWidth + 'px';
@@ -1931,11 +1971,39 @@
         document.getElementById('projectModal').style.display = 'flex';
     }
 
+    const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let _pendingWeekendDays = null; // tracked while settings modal is open, applied only on Save
+
+    function renderWeekdayCheckboxes() {
+        _pendingWeekendDays = [...displaySettings.weekendDays];
+        const container = document.getElementById('weekdayCheckboxes');
+        container.innerHTML = WEEKDAY_NAMES.map((name, idx) => `
+            <label style="display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; cursor:pointer; font-size:10px; background:white; min-width:42px;" id="wdLabel${idx}">
+                <input type="checkbox" data-day="${idx}" ${_pendingWeekendDays.includes(idx) ? 'checked' : ''} onchange="toggleWeekendDay(${idx}, this.checked)" style="margin:0;">
+                ${name}
+            </label>
+        `).join('');
+    }
+    function toggleWeekendDay(dayIdx, isChecked) {
+        if (isChecked && !_pendingWeekendDays.includes(dayIdx)) _pendingWeekendDays.push(dayIdx);
+        if (!isChecked) _pendingWeekendDays = _pendingWeekendDays.filter(d => d !== dayIdx);
+    }
+    function applyWeekendPreset(preset) {
+        _pendingWeekendDays = preset === 'saudi' ? [5, 6] : [0, 6]; // Saudi: Fri-Sat off. Standard: Sat-Sun off.
+        renderWeekdayCheckboxesFromPending();
+    }
+    function renderWeekdayCheckboxesFromPending() {
+        document.querySelectorAll('#weekdayCheckboxes input[type=checkbox]').forEach(cb => {
+            cb.checked = _pendingWeekendDays.includes(parseInt(cb.dataset.day));
+        });
+    }
+
     function openSettingsModal() {
         document.getElementById('settingsOwnerEnabled').checked = displaySettings.ownerEnabled;
         document.getElementById('settingsBorderWidth').value = displaySettings.borderWidth;
         document.getElementById('borderWidthVal').textContent = displaySettings.borderWidth + 'px';
         document.getElementById('settingsShowBaseline').checked = displaySettings.showBaseline;
+        renderWeekdayCheckboxes();
         
         // Build owner color list from all unique owners across current project
         const proj = db.projects.find(p => p.id === db.activeId);
@@ -1978,6 +2046,11 @@
         displaySettings.ownerEnabled = document.getElementById('settingsOwnerEnabled').checked;
         displaySettings.borderWidth = parseInt(document.getElementById('settingsBorderWidth').value);
         displaySettings.showBaseline = document.getElementById('settingsShowBaseline').checked;
+        if (_pendingWeekendDays && _pendingWeekendDays.length > 0 && _pendingWeekendDays.length < 7) {
+            displaySettings.weekendDays = [..._pendingWeekendDays];
+        } else if (_pendingWeekendDays && _pendingWeekendDays.length === 0) {
+            toast('At least one weekend day is required — keeping previous setting', 'error', 4000);
+        }
         
         // Read color pickers
         document.querySelectorAll('.owner-color-picker').forEach(picker => {
@@ -2513,11 +2586,11 @@
             let right = parseFloat(el.style.left) + (el.offsetWidth || 0);
             if (!isNaN(right) && right > maxRight) maxRight = right;
         });
-        const totalW = (maxRight > 0 ? maxRight + 160 : 800) + 420;
+        const totalW = (maxRight > 0 ? maxRight + 160 : 800) + 468;
         const totalH = exportArea.scrollHeight || exportArea.offsetHeight || 600;
 
         // Use html2canvas to capture, then embed as image in SVG for transparent bg
-        const targetTimelineWidth = totalW - 420;
+        const targetTimelineWidth = totalW - 468;
         const timelineArea = document.getElementById('ganttTimeline');
         document.body.classList.add('exporting');
         exportArea.style.width = totalW + 'px'; exportArea.style.minWidth = totalW + 'px';
@@ -2560,7 +2633,7 @@
             if (!isNaN(right) && right > maxRight) maxRight = right;
         });
         const targetTimelineWidth = (maxRight > 0 ? maxRight + 160 : 800);
-        const totalW = targetTimelineWidth + 420;
+        const totalW = targetTimelineWidth + 468;
         const timelineArea = document.getElementById('ganttTimeline');
 
         document.body.classList.add('exporting');
