@@ -73,7 +73,7 @@
         .badge-gate { font-size: 8px; font-weight: 700; color: var(--gate-color); background: var(--gate-bg); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--gate-border); flex-shrink: 0; }
         .badge-ms { font-size: 8px; font-weight: 700; color: var(--milestone); background: #f3f0ff; padding: 1px 5px; border-radius: 3px; border: 1px solid #e9e5f5; flex-shrink: 0; }
 
-        .bar-label-outside { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 6px; font-size: 10px; font-weight: 700; color: var(--text-main); white-space: nowrap; pointer-events: none; z-index: 50; text-shadow: 0 0 3px var(--card-bg), 0 0 3px var(--card-bg), 0 0 3px var(--card-bg), 0 0 3px var(--card-bg); }
+        .bar-label-outside { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 6px; font-size: 11px; font-weight: 700; color: var(--text-main); white-space: nowrap; pointer-events: none; z-index: 50; text-shadow: 0 0 3px var(--card-bg), 0 0 3px var(--card-bg), 0 0 3px var(--card-bg), 0 0 3px var(--card-bg); }
 
         .owner-filter { border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 12px; font-family: inherit; outline: none; background: white; color: var(--text-main); max-width: 130px; }
         .owner-filter:focus { border-color: var(--primary); }
@@ -116,7 +116,7 @@
         .gantt-body { display: flex; width: 100%; position: relative; }
 
         .gantt-names { width: 448px; flex-shrink: 0; background: var(--card-bg); position: sticky; left: 0; z-index: 250; border-right: 1px solid var(--border); }
-        .name-header { height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px 0 12px; font-weight: 600; background: #faf9f6; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; gap: 6px; }
+        .name-header { height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 12px 0 16px; font-weight: 600; background: #faf9f6; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; gap: 6px; }
         .col-name { flex: 1; min-width: 0; }
         .col-duration { width: 32px; flex-shrink: 0; display: flex; justify-content: flex-end; }
         .col-variance { width: 50px; flex-shrink: 0; display: flex; justify-content: center; align-items: center; font-size: 10.5px; font-weight: 700; }
@@ -213,7 +213,7 @@
         .gantt-bar.overdue { background: var(--status-overdue) !important; }
         .gantt-bar.completed { background: var(--primary) !important; opacity: 0.72; box-shadow: none; }
         .progress-fill { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(0,0,0,.18); z-index: 1; border-radius: 6px 0 0 6px; }
-        .bar-label { position: relative; z-index: 2; text-shadow: 0 1px 1px rgba(0,0,0,.15); }
+        .bar-label { position: relative; z-index: 2; font-weight: 700; text-shadow: 0 1px 1px rgba(0,0,0,.15); }
 
         .gantt-summary-bar { width: 100%; height: 8px; background: var(--parent-dark); position: relative; margin-top: 10px; border-radius: 2px; cursor: pointer; overflow: hidden; }
         .gantt-summary-bar::before, .gantt-summary-bar::after { content: ''; position: absolute; top: 0; border-top: 8px solid var(--parent-dark); }
@@ -239,8 +239,14 @@
         .dep-line-hitbox { cursor: pointer; pointer-events: stroke; }
 
         /* ── Phases & Markers ── */
-        .gantt-highlight-zone { position: absolute; top: 56px; bottom: 50px; border-left: 1px dashed rgba(87,138,110,.25); border-right: 1px dashed rgba(87,138,110,.25); z-index: 2; pointer-events: none; overflow: visible; background: rgba(87,138,110,.02); }
+        .gantt-highlight-zone { position: absolute; top: 56px; bottom: 50px; border-left: 1px dashed rgba(87,138,110,.25); border-right: 1px dashed rgba(87,138,110,.25); z-index: 2; pointer-events: none; overflow: visible; background: rgba(87,138,110,.02); transition: background .25s, border-color .25s, box-shadow .25s; }
         .gantt-highlight-zone.agile { border-color: rgba(196,154,60,.25); background: rgba(196,154,60,.02); }
+        .gantt-highlight-zone.phase-spotlight { background: rgba(87,138,110,.16); border-left: 2px solid rgba(61,107,82,.6); border-right: 2px solid rgba(61,107,82,.6); box-shadow: inset 0 0 0 1000px rgba(87,138,110,.05); }
+        .gantt-highlight-zone.agile.phase-spotlight { background: rgba(196,154,60,.16); border-left: 2px solid rgba(139,110,31,.6); border-right: 2px solid rgba(139,110,31,.6); box-shadow: inset 0 0 0 1000px rgba(196,154,60,.05); }
+        .phase-spotlight-btn { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border: none; background: rgba(255,255,255,.18); border-radius: 50%; margin-right: 7px; padding: 0; cursor: pointer; color: white; transition: background .15s, color .15s, transform .1s; }
+        .phase-spotlight-btn:hover { background: rgba(255,255,255,.34); }
+        .phase-spotlight-btn:active { transform: scale(0.9); }
+        .phase-spotlight-btn.active { background: #ffd54a; color: #4a3800; }
         .zone-banner { display: flex; align-items: center; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 4px; pointer-events: auto; cursor: pointer; transition: filter .15s; }
         .zone-banner:hover { filter: brightness(0.95); }
         .zone-banner.waterfall { background: rgba(87,138,110,.08); color: #3d6b52; border: 1px solid rgba(87,138,110,.2); }
@@ -250,11 +256,31 @@
         .methodology-tag.waterfall { background: rgba(87,138,110,.1); color: #3d6b52; }
         .methodology-tag.agile { background: rgba(196,154,60,.12); color: #8b6e1f; }
 
-        .phase-bracket-container { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; z-index: 260; }
+        .phase-bracket-container { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; justify-content: flex-start; z-index: 260; overflow: hidden; }
         .phase-bracket-line { position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: var(--phase); transform: translateY(-50%); z-index: 1; pointer-events: none; }
         .phase-bracket-line::before, .phase-bracket-line::after { content: ''; position: absolute; bottom: 0; width: 2px; height: 14px; background: var(--phase); }
         .phase-bracket-line::before { left: 0; } .phase-bracket-line::after { right: 0; }
-        .highlight-label { position: relative; z-index: 2; font-weight: 600; color: white; background: var(--phase); padding: 3px 14px; border-radius: 12px; font-size: 11px; white-space: nowrap; pointer-events: auto; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+        .highlight-label { position: relative; z-index: 2; display: flex; align-items: center; font-weight: 600; color: white; background: var(--phase); padding: 3px 14px; border-radius: 12px; font-size: 11px; white-space: nowrap; pointer-events: auto; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.1); margin-left: 6px; overflow: hidden; min-width: 0; max-width: calc(100% - 6px); }
+        .phase-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 12px; flex: 0 1 auto; }
+        .phase-sprint-info { font-weight: 400; font-size: 10px; opacity: .8; margin-left: 6px; flex-shrink: 0; }
+        .phase-meth-tag { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 8px; background: rgba(255,255,255,.92); letter-spacing: .04em; flex-shrink: 0; }
+        /* Progressive-disclosure breakpoints, applied by JS after measuring available width.
+           Each tier drops one whole element rather than truncating text mid-word, so whatever
+           remains visible is always complete and meaningful. */
+        .highlight-label[data-tier="compact"] .phase-sprint-info { display: none; }
+        .highlight-label[data-tier="badge-only"] .phase-sprint-info,
+        .highlight-label[data-tier="badge-only"] .phase-name-text { display: none; }
+        .highlight-label[data-tier="badge-only"] { padding: 3px 10px; }
+        .highlight-label[data-tier="icon-only"] .phase-sprint-info,
+        .highlight-label[data-tier="icon-only"] .phase-name-text,
+        .highlight-label[data-tier="icon-only"] .phase-meth-tag { display: none; }
+        .highlight-label[data-tier="icon-only"] { padding: 0; width: 22px; height: 22px; border-radius: 50%; justify-content: center; }
+        .highlight-label[data-tier="icon-only"] .phase-spotlight-btn { margin-right: 0; }
+        .phase-popover { position: fixed; background: var(--card-bg, white); color: var(--text-main, #222); border: 1px solid var(--border, #e2e0d8); border-radius: 10px; padding: 10px 13px; width: 220px; box-shadow: 0 4px 14px rgba(0,0,0,.14); z-index: 900; opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity .12s ease, transform .12s ease; white-space: normal; cursor: default; }
+        .phase-popover.pop-visible { opacity: 1; transform: translateY(0); }
+        .phase-popover-name { font-size: 12.5px; font-weight: 600; margin-bottom: 5px; }
+        .phase-popover-body { font-size: 11.5px; color: var(--text-muted, #777); line-height: 1.6; }
+        .phase-popover-body > div { margin-bottom: 2px; }
 
         .marker-line { position: absolute; top: 56px; bottom: 0; width: 1px; z-index: 8; pointer-events: none; opacity: 0.7; }
         .marker-label { position: absolute; top: 58px; transform: translateX(-50%); color: white; padding: 2px 10px; border-radius: 0 0 5px 5px; font-size: 10px; font-weight: 600; white-space: nowrap; pointer-events: auto; cursor: pointer; background: var(--marker); z-index: 35; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
@@ -586,6 +612,76 @@
     let authMode = 'signin'; // 'signin' | 'signup'
     let currentUser = null;
     let isReadOnlyShareView = false;
+    // Tracks which phases the user has toggled into "spotlight" mode (bold full-height
+    // highlight instead of the default subtle tint). Purely a view preference — never
+    // saved to the project data or Supabase — so it intentionally resets on page reload.
+    let phaseSpotlightSet = new Set();
+    function togglePhaseSpotlight(phaseId) {
+        const key = String(phaseId);
+        const btn = document.querySelector(`.phase-spotlight-btn[data-phaseid="${phaseId}"]`);
+        const zone = document.querySelector(`.gantt-highlight-zone[data-phaseid="${phaseId}"]`);
+        if (phaseSpotlightSet.has(key)) {
+            phaseSpotlightSet.delete(key);
+            if (btn) btn.classList.remove('active');
+            if (zone) zone.classList.remove('phase-spotlight');
+        } else {
+            phaseSpotlightSet.add(key);
+            if (btn) btn.classList.add('active');
+            if (zone) zone.classList.add('phase-spotlight');
+        }
+    }
+    // Custom hover popover for phase labels. Lives as a single floating element attached to
+    // <body> (not nested inside the label), because the label and its container both need
+    // overflow:hidden for text truncation — anything positioned absolute inside them would be
+    // clipped invisible the moment it tried to extend past their edges. Positioning via
+    // getBoundingClientRect sidesteps that entirely.
+    const phasePopoverData = {};
+    let phasePopoverEl = null;
+    function getPhasePopoverEl() {
+        if (phasePopoverEl && document.body.contains(phasePopoverEl)) return phasePopoverEl;
+        phasePopoverEl = document.createElement('div');
+        phasePopoverEl.className = 'phase-popover';
+        document.body.appendChild(phasePopoverEl);
+        return phasePopoverEl;
+    }
+    const phasePopoverTimers = new WeakMap();
+    function showPhasePopover(el) {
+        clearTimeout(phasePopoverTimers.get(el));
+        phasePopoverTimers.set(el, setTimeout(() => {
+            const data = phasePopoverData[el.dataset.phaseid];
+            if (!data) return;
+            const pop = getPhasePopoverEl();
+            pop.innerHTML = `
+                <div class="phase-popover-name">${data.name}</div>
+                <div class="phase-popover-body">
+                    <div>${data.line1}</div>
+                    ${data.sprintLine ? `<div>${data.sprintLine}</div>` : ''}
+                    <div>${data.rollupLine}</div>
+                </div>`;
+            const r = el.getBoundingClientRect();
+            pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 236)) + 'px';
+            pop.style.top = (r.bottom + 8) + 'px';
+            pop.classList.add('pop-visible');
+        }, 180));
+    }
+    function hidePhasePopover(el) {
+        clearTimeout(phasePopoverTimers.get(el));
+        if (phasePopoverEl) phasePopoverEl.classList.remove('pop-visible');
+    }
+    // Progressive-disclosure sizing: rather than truncating the label's text down to an
+    // illegible fragment, drop whole elements in priority order (sprint info, then the name,
+    // then the badge) until what remains actually fits — so the visible content is always
+    // complete and meaningful, never a chopped word. Icon-only is the last, always-fits floor.
+    function applyPhaseLabelBreakpoints() {
+        document.querySelectorAll('.highlight-label').forEach(label => {
+            const tiers = [null, 'compact', 'badge-only', 'icon-only'];
+            for (const tier of tiers) {
+                if (tier) label.setAttribute('data-tier', tier); else label.removeAttribute('data-tier');
+                if (label.scrollWidth <= label.clientWidth + 1 || tier === 'icon-only') break;
+            }
+        });
+    }
+    window.addEventListener('resize', () => requestAnimationFrame(applyPhaseLabelBreakpoints));
 
     function toggleAuthMode() {
         authMode = authMode === 'signin' ? 'signup' : 'signin';
@@ -1444,10 +1540,10 @@
         // makes short projects (weeks-long) unreadable. Scale it by actual span instead:
         // short spans get generous spacing, genuinely long timelines stay compact.
         let monthlyPxPerDay;
-        if (totalDays < 60) monthlyPxPerDay = 14;
-        else if (totalDays < 180) monthlyPxPerDay = 9;
-        else if (totalDays < 400) monthlyPxPerDay = 5;
-        else monthlyPxPerDay = 3;
+        if (totalDays < 60) monthlyPxPerDay = 8;
+        else if (totalDays < 180) monthlyPxPerDay = 6;
+        else if (totalDays < 400) monthlyPxPerDay = 4;
+        else monthlyPxPerDay = 2.5;
         const pxPerDay = scale === 'days' ? 40 : (scale === 'weeks' ? 16 : monthlyPxPerDay);
         window._currentPxPerDay = pxPerDay; // shared with drag-resize handler so it always matches the rendered scale
         const timelineWidth = totalDays * pxPerDay;
@@ -1506,27 +1602,59 @@
         proj.highlights.forEach(hl => {
             const s = new Date(hl.start); const e = new Date(hl.end); const off = getDaysDiff(minD, s); const dur = getDaysDiff(s, e) + 1;
             const isAgile = hl.methodology === 'agile';
-            
-            const zoneClass = isAgile ? 'gantt-highlight-zone agile' : 'gantt-highlight-zone';
+            const isSpotlit = phaseSpotlightSet.has(String(hl.id));
 
-            // Zone overlay only - subtle dashed borders
-            phaseLines += `<div class="${zoneClass}" style="left:${off*pxPerDay}px;width:${dur*pxPerDay}px;"></div>`;
+            const zoneClass = (isAgile ? 'gantt-highlight-zone agile' : 'gantt-highlight-zone') + (isSpotlit ? ' phase-spotlight' : '');
+
+            // Zone overlay only - subtle dashed borders (or, when spotlit, a bold full-height highlight)
+            phaseLines += `<div class="${zoneClass}" data-phaseid="${hl.id}" style="left:${off*pxPerDay}px;width:${dur*pxPerDay}px;"></div>`;
 
             // Footer bracket with label
             let sprintInfo = '';
+            let sprintPop = '';
             if (isAgile && hl.sprintDays && hl.sprintDays > 0) {
                 const totalSprints = hl.numSprints || Math.ceil(dur / hl.sprintDays);
-                sprintInfo = `<span style="font-weight:400;font-size:10px;opacity:.8;margin-left:6px;">${totalSprints} sprints × ${hl.sprintDays}d each</span>`;
+                sprintInfo = `<span class="phase-sprint-info">${totalSprints} sprints × ${hl.sprintDays}d each</span>`;
+                sprintPop = `<div>${totalSprints} sprints × ${hl.sprintDays}d each</div>`;
             }
             const methColor = isAgile ? '#8b6e1f' : '#3d6b52';
-            const methTag = `<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px;background:rgba(255,255,255,.92);color:${methColor};letter-spacing:.04em;">${isAgile ? 'AGILE' : 'WATERFALL'}</span>`;
+            const methLabel = isAgile ? 'Agile' : 'Waterfall';
+            const methTag = `<span class="phase-meth-tag" style="color:${methColor};">${methLabel.toUpperCase()}</span>`;
+
+            // Rollup stats, derived live from existing task data — nothing new stored on the phase.
+            const sMs = s.getTime(), eMs = e.getTime();
+            const tasksInPhase = proj.tasks.filter(t => {
+                if (t.parentId || !t.start || !t.end) return false; // top-level tasks only, avoid double-counting children
+                const ts = new Date(t.start).getTime(), te = new Date(t.end).getTime();
+                return ts <= eMs && te >= sMs;
+            });
+            const taskCountLabel = tasksInPhase.length === 1 ? '1 task' : `${tasksInPhase.length} tasks`;
+            const avgProgress = tasksInPhase.length ? Math.round(tasksInPhase.reduce((sum, t) => sum + parseInt(t.progress || 0), 0) / tasksInPhase.length) : null;
+            const rollupLine = tasksInPhase.length ? `${taskCountLabel} · ${avgProgress}% avg progress` : 'No tasks in this range';
+
+            // Custom hover popover replaces the native title tooltip — content is stashed in
+            // phasePopoverData (keyed by id) rather than nested inline HTML, because a popover
+            // nested inside this label would get clipped by the overflow:hidden needed for the
+            // label's own text truncation. The actual popover element lives at the page level
+            // (see showPhasePopover) so it can float freely above everything.
+            phasePopoverData[hl.id] = {
+                name: esc(hl.label),
+                line1: `${methLabel} · ${formatDate(s)} – ${formatDate(e)} (${dur}d)`,
+                sprintLine: isAgile && sprintPop ? sprintPop.replace(/<\/?div>/g, '') : '',
+                rollupLine: esc(rollupLine)
+            };
+            const spotlightIcon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>`;
             phaseFooter += `
                 <div class="phase-bracket-container" style="left:${off*pxPerDay}px;width:${dur*pxPerDay}px;">
                     <div class="phase-bracket-line"></div>
-                    <div class="highlight-label" onclick="openPhaseModal('${hl.id}')" title="Click to edit">${esc(hl.label)}${sprintInfo}${methTag}</div>
+                    <div class="highlight-label" data-phaseid="${hl.id}" onclick="openPhaseModal('${hl.id}')" onmouseenter="showPhasePopover(this)" onmouseleave="hidePhasePopover(this)">
+                        <button type="button" class="phase-spotlight-btn${isSpotlit ? ' active' : ''}" data-phaseid="${hl.id}" aria-label="Highlight this phase's tasks" onclick="event.stopPropagation(); togglePhaseSpotlight('${hl.id}')">${spotlightIcon}</button>
+                        <span class="phase-name-text">${esc(hl.label)}</span>${sprintInfo}${methTag}
+                    </div>
                 </div>`;
         });
         phaseFooter += '</div>';
+        requestAnimationFrame(applyPhaseLabelBreakpoints);
 
         let renderList = [];
         const ownerMatch = (t) => !ownerFilterValue || t.owner === ownerFilterValue;
@@ -1725,16 +1853,21 @@
                 pathStr = `M ${x1} ${y1} L ${arrowEnd} ${y2}`;
             } else {
                 const gap = x2 - x1;
-                if (gap >= 0) {
-                    // Forward dependency: always a clean single elbow, scaled proportionally
-                    // to the actual gap — no fixed "kick" that looks oversized at low zoom.
+                const MIN_ELBOW = 20; // below this gap, the plain elbow would be too cramped to read
+                if (gap >= MIN_ELBOW) {
+                    // Plenty of room: exact same shape as always — proportional midpoint elbow.
+                    // Untouched from the original so wide-gap arrows never change.
                     const midx = x1 + gap / 2;
                     pathStr = `M ${x1} ${y1} L ${midx} ${y1} L ${midx} ${y2} L ${arrowEnd} ${y2}`;
                 } else {
-                    // Backward dependency: needs to loop out before heading back left
-                    const kick = 10;
-                    const midx = x1 + kick;
-                    pathStr = `M ${x1} ${y1} L ${midx} ${y1} L ${midx} ${y2} L ${arrowEnd} ${y2}`;
+                    // Gap too tight for a normal elbow (or a backward dependency): loop the
+                    // line out to a fixed minimum size instead of shrinking the elbow down to
+                    // an illegible nub. The loop always has the same footprint regardless of
+                    // how close the bars are, so the arrow stays readable at any zoom level.
+                    const kick = 15;
+                    const midY = y1 + (y2 - y1) / 2;
+                    const loopX = x1 - 10;
+                    pathStr = `M ${x1} ${y1} L ${x1 + kick} ${y1} L ${x1 + kick} ${midY} L ${loopX} ${midY} L ${loopX} ${y2} L ${arrowEnd} ${y2}`;
                 }
             }
 
@@ -2117,6 +2250,30 @@
         }
     });
 
+    function applyReadOnlyLock(modalId) {
+        if (!isReadOnlyShareView) return;
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.type === 'checkbox' || el.type === 'radio' || el.tagName === 'SELECT') el.disabled = true;
+            else el.readOnly = true;
+        });
+        modal.querySelectorAll('button').forEach(btn => {
+            const onclick = (btn.getAttribute('onclick') || '').trim();
+            if (/^(saveTask|savePhase|saveMarker|deleteTask|deletePhase|deleteMarker|addDependencyRow|clearAllDependencies)\(/.test(onclick)) {
+                btn.style.display = 'none';
+            }
+        });
+        modal.querySelectorAll('.dep-row button').forEach(b => b.style.display = 'none');
+        if (!modal.querySelector('.readonly-banner')) {
+            const banner = document.createElement('div');
+            banner.className = 'readonly-banner';
+            banner.style.cssText = 'background:#eff6ff;color:#1864ab;border:1px solid #a5d8ff;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;margin-bottom:14px;';
+            banner.textContent = 'View only — this is a shared read-only project';
+            modal.querySelector('.modal').insertBefore(banner, modal.querySelector('.modal').firstChild);
+        }
+    }
+
     function openPhaseModal(id = null) {
         const proj = db.projects.find(p => p.id === db.activeId);
         if(id) { const h = proj.highlights.find(x => x.id == id); if(!h) return; 
@@ -2138,6 +2295,7 @@
             toggleSprintFields('waterfall'); 
         }
         document.getElementById('phaseModal').style.display = 'flex';
+        applyReadOnlyLock('phaseModal');
     }
     
     function savePhase() {
@@ -2179,6 +2337,7 @@
         if(id) { const m = proj.markers.find(x => x.id == id); if(!m) return; document.getElementById('markerId').value = m.id; document.getElementById('markerName').value = m.label; document.getElementById('markerDate').value = m.date; }
         else { document.getElementById('markerId').value = ""; document.getElementById('markerName').value = ""; }
         document.getElementById('markerModal').style.display = 'flex';
+        applyReadOnlyLock('markerModal');
     }
 
     function saveMarker() {
@@ -2267,7 +2426,8 @@
             document.getElementById('taskNotes').value = '';
         }
         document.getElementById('taskModal').style.display = 'flex';
-        setTimeout(() => document.getElementById('taskName').focus(), 100);
+        applyReadOnlyLock('taskModal');
+        if (!isReadOnlyShareView) setTimeout(() => document.getElementById('taskName').focus(), 100);
     }
     
     function handleOwnerSelectChange() {
