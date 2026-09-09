@@ -16,12 +16,12 @@
         :root {
             --primary: #578a6e; --primary-hover: #4a7c61; --primary-light: #eef5f1;
             --spotlight: #2563eb; --spotlight-light: #eff6ff;
-            --status-not-started: #94a3b8; --status-in-progress: #8c6239; --status-overdue: #dc2626;
+            --status-not-started: #94a3b8; --status-in-progress: #c49a3c; --status-overdue: #dc2626; --overdue-icon: #e67700;
             --accent: #c49a3c; --accent-light: #faf5ea; --accent-hover: #b38a30;
             --sidebar-bg: #2c3a33; --sidebar-hover: #3a4b42; --sidebar-active: #578a6e;
             --bg-color: #f7f5f0; --card-bg: #ffffff; --text-main: #2c3531; --text-muted: #7c8a84;
             --border: #e0ddd6; --border-light: #ebe9e3;
-            --critical: #c49a3c; --today: #c0392b;
+            --critical: #dc2626; --today: #c0392b;
             --milestone: #578a6e; --marker: #8a7f72; --phase: #578a6e; --parent-dark: #4a5650;
             --gate-color: #3d3d3d; --gate-bg: #f0efed; --gate-border: #d6d3cc;
             --baseline: #b5b0a5; --row-height: 48px;
@@ -108,9 +108,9 @@
         button.small { padding: 4px 10px; font-size: 11px; }
 
         .gantt-viewport { flex-grow: 1; overflow: auto; padding: 16px; position: relative; }
-        .gantt-container { display: flex; flex-direction: column; background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border); width: fit-content; min-width: 100%; position: relative; box-shadow: var(--shadow-sm); }
+        .gantt-container { display: flex; flex-direction: column; align-items: flex-start; background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border); width: fit-content; min-width: 100%; position: relative; box-shadow: var(--shadow-sm); }
 
-        .chart-header { padding: 14px 20px; border-bottom: 1px solid var(--border); background: white; border-radius: 10px 10px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .chart-header { padding: 14px 20px; border-bottom: 1px solid var(--border); background: white; border-radius: 10px 10px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; position: sticky; left: 0; z-index: 220; }
         .chart-legend { display: flex; gap: 14px; font-size: 11px; color: var(--text-muted); font-weight: 500; flex-wrap: wrap; align-items: center; }
 
         .gantt-body { display: flex; width: 100%; position: relative; }
@@ -209,8 +209,16 @@
         .gantt-bar:hover { filter: brightness(1.06); }
         .gantt-bar.status-not-started { background: var(--status-not-started) !important; }
         .gantt-bar.status-in-progress { background: var(--status-in-progress) !important; }
-        .gantt-bar.critical { background: var(--critical) !important; box-shadow: 0 0 0 1px rgba(196,154,60,.4), 0 1px 4px rgba(196,154,60,.2); }
-        .gantt-bar.overdue { background: var(--status-overdue) !important; }
+        .gantt-bar.critical { box-shadow: 0 0 0 3px var(--critical); }
+        .bar-overdue-badge { position: absolute; top: -6px; right: -6px; width: 15px; height: 15px; border-radius: 50%; background: var(--overdue-icon); box-shadow: 0 0 0 2px var(--card-bg, white); display: flex; align-items: center; justify-content: center; z-index: 5; pointer-events: none; }
+        /* "Focus critical path" mode: everything non-critical fades out, critical bars get a
+           stronger glow — a deliberate opt-in view for tracing the chain, not the default look. */
+        body.critical-focus-on .gantt-bar:not(.critical), body.critical-focus-on .gantt-milestone:not(.critical), body.critical-focus-on .gantt-summary-bar { opacity: .22; transition: opacity .25s; }
+        body.critical-focus-on .gantt-bar.critical, body.critical-focus-on .gantt-milestone.critical { box-shadow: 0 0 0 3px var(--critical), 0 0 8px rgba(220,38,38,.5); }
+        .name-cell.is-critical { box-shadow: inset 3px 0 0 var(--critical); }
+        body.critical-focus-on .name-cell:not(.is-critical) { opacity: .35; transition: opacity .25s; }
+        body.critical-focus-on .name-cell.is-critical { background: rgba(220,38,38,.07); }
+        #criticalFocusBtn.active { background: var(--critical); border-color: var(--critical); color: white; }
         .gantt-bar.completed { background: var(--primary) !important; opacity: 0.72; box-shadow: none; }
         .progress-fill { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(0,0,0,.18); z-index: 1; border-radius: 6px 0 0 6px; }
         .bar-label { position: relative; z-index: 2; font-weight: 700; text-shadow: 0 1px 1px rgba(0,0,0,.15); }
@@ -223,7 +231,7 @@
         .gantt-milestone { width: 20px; height: 20px; background: var(--milestone); transform: rotate(45deg); position: absolute; top: 4px; border: 2px solid white; z-index: 35; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
         .gantt-milestone.critical { box-shadow: 0 0 0 2px var(--critical), 0 2px 4px rgba(0,0,0,.15); }
         .gantt-milestone.gate { width: 24px; height: 24px; top: 2px; background: var(--gate-color); border: 3px solid var(--gate-bg); box-shadow: 0 0 0 2px var(--gate-color), 0 2px 6px rgba(61,61,61,.25); }
-        .gantt-milestone.gate.critical { box-shadow: 0 0 0 2px var(--critical), 0 2px 6px rgba(196,154,60,.35); }
+        .gantt-milestone.gate.critical { box-shadow: 0 0 0 2px var(--critical), 0 2px 6px rgba(220,38,38,.35); }
         .gate-label { position: absolute; top: -2px; left: 28px; font-size: 9px; font-weight: 700; color: var(--gate-color); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; z-index: 36; pointer-events: none; background: var(--gate-bg); padding: 1px 6px; border-radius: 3px; border: 1px solid var(--gate-border); }
         .dep-lag-label { font-size: 9px; font-weight: 600; fill: var(--text-muted); pointer-events: none; }
 
@@ -256,11 +264,11 @@
         .methodology-tag.waterfall { background: rgba(87,138,110,.1); color: #3d6b52; }
         .methodology-tag.agile { background: rgba(196,154,60,.12); color: #8b6e1f; }
 
-        .phase-bracket-container { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; justify-content: flex-start; z-index: 260; overflow: hidden; }
+        .phase-bracket-container { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; z-index: 260; overflow: hidden; }
         .phase-bracket-line { position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: var(--phase); transform: translateY(-50%); z-index: 1; pointer-events: none; }
-        .phase-bracket-line::before, .phase-bracket-line::after { content: ''; position: absolute; bottom: 0; width: 2px; height: 14px; background: var(--phase); }
+        .phase-bracket-line::before, .phase-bracket-line::after { content: ''; position: absolute; bottom: 0; width: 2px; height: 14px; background: currentColor; }
         .phase-bracket-line::before { left: 0; } .phase-bracket-line::after { right: 0; }
-        .highlight-label { position: relative; z-index: 2; display: flex; align-items: center; font-weight: 600; color: white; background: var(--phase); padding: 3px 14px; border-radius: 12px; font-size: 11px; white-space: nowrap; pointer-events: auto; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.1); margin-left: 6px; overflow: hidden; min-width: 0; max-width: calc(100% - 6px); }
+        .highlight-label { position: relative; z-index: 2; display: flex; align-items: center; font-weight: 600; color: white; background: var(--phase); padding: 3px 14px; border-radius: 12px; font-size: 11px; white-space: nowrap; pointer-events: auto; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.1); overflow: hidden; min-width: 0; max-width: calc(100% - 6px); }
         .phase-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 12px; flex: 0 1 auto; }
         .phase-sprint-info { font-weight: 400; font-size: 10px; opacity: .8; margin-left: 6px; flex-shrink: 0; }
         .phase-meth-tag { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 8px; background: rgba(255,255,255,.92); letter-spacing: .04em; flex-shrink: 0; }
@@ -303,6 +311,7 @@
         body.exporting .gantt-viewport { overflow: visible !important; padding: 0 !important; width: max-content !important; }
         body.exporting .gantt-container { box-shadow: none !important; border-radius: 0 !important; width: max-content !important; }
         body.exporting .gantt-names { position: static !important; width: 468px !important; }
+        body.exporting .chart-header { position: static !important; }
         body.exporting .name-cell .col-name span { white-space: nowrap !important; overflow: visible !important; text-overflow: clip !important; }
         body.exporting .row-locate-btn, body.exporting .row-delete-btn, body.exporting .drag-grip { display: none !important; }
         body.exporting .inline-add-row { display: none !important; }
@@ -317,6 +326,7 @@
             .gantt-viewport { overflow: visible !important; padding: 0 !important; height: auto !important; }
             .gantt-container { box-shadow: none !important; border-radius: 0 !important; width: max-content !important; min-width: 100% !important; }
             .gantt-names { position: static !important; }
+            .chart-header { position: static !important; }
             .gantt-body { width: max-content !important; }
             @page { margin: 10mm; size: A3 landscape; }
         }
@@ -449,6 +459,10 @@
                     <option value="months">Monthly</option>
                 </select>
                 <button class="secondary" onclick="zoomToFit()">Fit</button>
+                <button class="secondary" id="criticalFocusBtn" onclick="toggleCriticalFocus()" title="Dim everything except the critical path" style="display:flex;align-items:center;gap:6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.5" fill="currentColor"/></svg>
+                    Focus critical
+                </button>
                 <div style="width:1px;height:22px;background:var(--border);margin:0 2px;"></div>
                 <button class="primary" onclick="openTaskModal()">+ Task</button>
                 <div class="more-dropdown" id="moreDropdown">
@@ -480,6 +494,7 @@
             <div class="gantt-container" id="ganttExportArea">
                 <div class="chart-header" id="exportHeader">
                     <h2 id="chartProjectTitle" style="margin:0; color:var(--text-main); font-size:17px; font-weight:700; letter-spacing:-.02em;">Project Plan</h2>
+                    <div id="chartHeaderStats" style="display:flex;gap:18px;align-items:center;"></div>
                 </div>
                 <div class="gantt-body">
                     <div class="gantt-names" id="ganttNames"></div>
@@ -616,6 +631,13 @@
     // highlight instead of the default subtle tint). Purely a view preference — never
     // saved to the project data or Supabase — so it intentionally resets on page reload.
     let phaseSpotlightSet = new Set();
+    let criticalFocusOn = false;
+    function toggleCriticalFocus() {
+        criticalFocusOn = !criticalFocusOn;
+        document.body.classList.toggle('critical-focus-on', criticalFocusOn);
+        const btn = document.getElementById('criticalFocusBtn');
+        if (btn) btn.classList.toggle('active', criticalFocusOn);
+    }
     function togglePhaseSpotlight(phaseId) {
         const key = String(phaseId);
         const btn = document.querySelector(`.phase-spotlight-btn[data-phaseid="${phaseId}"]`);
@@ -1432,26 +1454,28 @@
             else baselineStatHtml = `<div class="stat-item">Baseline&nbsp;<span class="stat-value" style="color:var(--primary);">${v}d</span></div>`;
         }
         bar.innerHTML = `
-            <div style="display:flex;gap:18px;align-items:center;flex:1;">
-                <div class="stat-item"><span class="stat-dot" style="background:var(--primary)"></span><span class="stat-value">${total}</span>&nbsp;tasks</div>
-                <div class="stat-item"><span class="stat-dot" style="background:var(--primary);opacity:.4"></span><span class="stat-value">${done}</span>&nbsp;done</div>
-                <div class="stat-item"><span class="stat-dot" style="background:var(--critical)"></span><span class="stat-value">${critical}</span>&nbsp;critical</div>
-                <div class="stat-item">Progress&nbsp;<span class="stat-value">${avgProg}%</span></div>
-                ${critEnd ? `<div class="stat-item">Ends&nbsp;<span class="stat-value">${critEnd.end}</span></div>` : ''}
-                ${baselineStatHtml}
-                ${overdue > 0 ? `<div class="overdue-badge">${overdue} overdue</div>` : ''}
-            </div>
-            <div style="display:flex;gap:14px;align-items:center;font-size:11px;color:var(--text-muted);border-left:1px solid var(--border);padding-left:14px;">
+            <div style="display:flex;gap:14px;align-items:center;font-size:11px;color:var(--text-muted);">
                 <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;background:var(--status-not-started);border-radius:2px;"></div>Not Started</div>
                 <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;background:var(--status-in-progress);border-radius:2px;"></div>In Progress</div>
-                <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;background:var(--critical);border-radius:2px;"></div>Critical</div>
-                <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;background:var(--status-overdue);border-radius:2px;"></div>Overdue</div>
+                <div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;background:var(--card-bg,white);border-radius:2px;box-shadow:0 0 0 2px var(--critical);"></div>Critical</div>
+                <div style="display:flex;align-items:center;gap:5px;"><div style="width:14px;height:14px;border-radius:50%;background:var(--overdue-icon);display:flex;align-items:center;justify-content:center;"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>Overdue</div>
                 <div style="display:flex;align-items:center;gap:5px;"><div style="width:11px;height:11px;background:var(--primary);border-radius:2px;opacity:.72;"></div>Done</div>
                 <div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;background:var(--milestone);transform:rotate(45deg);"></div>Milestone</div>
                 <div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;background:var(--gate-color);transform:rotate(45deg);"></div>Gate</div>
                 <div style="display:flex;align-items:center;gap:5px;"><div style="width:16px;border-bottom:2px solid var(--today);"></div>Today</div>
-                <div style="display:flex;align-items:center;gap:5px;"><div style="width:16px;border-bottom:2px dashed var(--phase);opacity:.5;"></div>Phase</div>
+                <div style="display:flex;align-items:center;gap:5px;"><div style="width:16px;border-bottom:2px solid var(--phase);"></div>Phase (Waterfall)</div>
+                <div style="display:flex;align-items:center;gap:5px;"><div style="width:16px;border-bottom:2px solid var(--status-in-progress);"></div>Phase (Agile)</div>
             </div>
+        `;
+        const headerStats = document.getElementById('chartHeaderStats');
+        if (headerStats) headerStats.innerHTML = `
+            <div class="stat-item"><span class="stat-dot" style="background:var(--primary)"></span><span class="stat-value">${total}</span>&nbsp;tasks</div>
+            <div class="stat-item"><span class="stat-dot" style="background:var(--primary);opacity:.4"></span><span class="stat-value">${done}</span>&nbsp;done</div>
+            <div class="stat-item"><span class="stat-dot" style="background:var(--critical)"></span><span class="stat-value">${critical}</span>&nbsp;critical</div>
+            <div class="stat-item">Progress&nbsp;<span class="stat-value">${avgProg}%</span></div>
+            ${critEnd ? `<div class="stat-item">Ends&nbsp;<span class="stat-value">${critEnd.end}</span></div>` : ''}
+            ${baselineStatHtml}
+            ${overdue > 0 ? `<div class="overdue-badge">${overdue} overdue</div>` : ''}
         `;
     }
 
@@ -1498,7 +1522,7 @@
             ${task.notes ? `<div style="margin-top:5px;font-size:11px;color:#a0b5a8;border-top:1px solid rgba(255,255,255,.1);padding-top:5px;">${esc(task.notes)}</div>` : ''}
             ${depsHtml}
             <div class="tt-progress" style="margin-top:6px;">
-                <div class="tt-bar"><div class="tt-fill" style="width:${prog}%;${task.isCritical?'background:#c49a3c':''}"></div></div>
+                <div class="tt-bar"><div class="tt-fill" style="width:${prog}%"></div></div>
                 <span style="font-size:10px;font-weight:700;">${prog}%</span>
             </div>`;
         tooltip.style.display = 'block';
@@ -1646,8 +1670,8 @@
             const spotlightIcon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>`;
             phaseFooter += `
                 <div class="phase-bracket-container" style="left:${off*pxPerDay}px;width:${dur*pxPerDay}px;">
-                    <div class="phase-bracket-line"></div>
-                    <div class="highlight-label" data-phaseid="${hl.id}" onclick="openPhaseModal('${hl.id}')" onmouseenter="showPhasePopover(this)" onmouseleave="hidePhasePopover(this)">
+                    <div class="phase-bracket-line" style="background:${isAgile ? 'var(--status-in-progress)' : 'var(--phase)'};color:${isAgile ? 'var(--status-in-progress)' : 'var(--phase)'};"></div>
+                    <div class="highlight-label" data-phaseid="${hl.id}" style="background:${isAgile ? 'var(--status-in-progress)' : 'var(--phase)'};" onclick="openPhaseModal('${hl.id}')" onmouseenter="showPhasePopover(this)" onmouseleave="hidePhasePopover(this)">
                         <button type="button" class="phase-spotlight-btn${isSpotlit ? ' active' : ''}" data-phaseid="${hl.id}" aria-label="Highlight this phase's tasks" onclick="event.stopPropagation(); togglePhaseSpotlight('${hl.id}')">${spotlightIcon}</button>
                         <span class="phase-name-text">${esc(hl.label)}</span>${sprintInfo}${methTag}
                     </div>
@@ -1691,12 +1715,15 @@
             const isPastStartWithNoProgress = prog === 0 && new Date(task.start) < todayD;
             const isOverdue = prog < 100 && (isPastEnd || isPastStartWithNoProgress) && !task.isParent && !task.isMilestone && !task.isGate;
             const hasNotStarted = prog === 0 && new Date(task.start) >= todayD;
-            // Priority order: cycle error > done > overdue > critical > not-started > in-progress (default)
+            // Status determines the fill color on its own now (3 clean states: not-started,
+            // in-progress, done/cycle-warn). Critical and overdue used to fight status for the
+            // same color slot — now they're independent modifiers layered on top: critical adds
+            // a red ring (barClass + ' critical'), overdue adds a small corner badge. A task can
+            // be both without either one hiding the other or hiding its real status.
             const barClass = task.inCycle ? 'cycle-warn'
                 : (prog >= 100 ? 'completed'
-                : (isOverdue ? 'overdue'
-                : (task.isCritical ? 'critical'
-                : (hasNotStarted ? 'status-not-started' : 'status-in-progress'))));
+                : (hasNotStarted ? 'status-not-started' : 'status-in-progress'));
+            const criticalClass = task.isCritical ? ' critical' : '';
             const ownerColor = getOwnerColor(task.owner);
             const isCollapsed = collapsedParents.has(String(task.id));
             const durLabel = (task.start && task.end && !task.isParent) ? `<span class="dur-badge">${formatDuration(task.start, task.end)}</span>` : '';
@@ -1713,7 +1740,7 @@
             const collapseBtn = task.isParent ? `<button class="collapse-toggle ${isCollapsed?'collapsed':''}" onclick="event.stopPropagation(); toggleCollapse(${task.id})">▼</button>` : '';
             const overdueIcon = isOverdue ? '<span style="color:#e67700;font-size:10px;flex-shrink:0;" title="Overdue">⚠</span>' : '';
 
-            namesC.innerHTML += `<div class="name-cell ${task.parentId?'is-child':''} ${task.isParent?'is-parent':''}" 
+            namesC.innerHTML += `<div class="name-cell ${task.parentId?'is-child':''} ${task.isParent?'is-parent':''} ${task.isCritical?'is-critical':''}" 
                 data-taskid="${task.id}" draggable="true"
                 ondragstart="handleRowDragStart(event)" ondragover="handleRowDragOver(event)"
                 ondragenter="handleRowDragEnter(event)" ondragleave="handleRowDragLeave(event)"
@@ -1752,7 +1779,7 @@
                 const gateClass = task.isGate ? 'gate' : '';
                 const gateLabel = task.isGate ? `<span class="gate-label">GATE</span>` : '';
                 const msTooltipData = JSON.stringify({id:task.id,name:task.name,owner:task.owner||'',start:task.start,end:task.end,progress:prog,isCritical:task.isCritical,notes:task.notes||'',isOverdue,deps:task.deps||[],isGate:task.isGate}).replace(/"/g,'&quot;');
-                rowHtml += `<div class="timeline-row">${baselineHtml}<div class="gantt-bar-wrapper" style="left:${left}px;width:${task.isGate?28:24}px;" data-taskid="${task.id}">${handles}<div class="gantt-milestone ${barClass} ${gateClass}" onclick="openTaskModal(${task.id})" oncontextmenu="showBarCtxMenu(event,${task.id})" onmouseenter="showTooltip(event,${msTooltipData})" onmouseleave="hideTooltip()"></div>${gateLabel}</div></div>`;
+                rowHtml += `<div class="timeline-row">${baselineHtml}<div class="gantt-bar-wrapper" style="left:${left}px;width:${task.isGate?28:24}px;" data-taskid="${task.id}">${handles}<div class="gantt-milestone ${barClass}${criticalClass} ${gateClass}" onclick="openTaskModal(${task.id})" oncontextmenu="showBarCtxMenu(event,${task.id})" onmouseenter="showTooltip(event,${msTooltipData})" onmouseleave="hideTooltip()"></div>${gateLabel}</div></div>`;
             } else {
                 const tooltipData = JSON.stringify({id:task.id,name:task.name,owner:task.owner||'',start:task.start,end:task.end,progress:prog,isCritical:task.isCritical,notes:task.notes||'',isOverdue,deps:task.deps||[]}).replace(/"/g,'&quot;');
                 // Below ~34px the "NN%" text can't fit cleanly inside the bar and gets clipped into
@@ -1764,7 +1791,8 @@
                 const outsideLabelHtml = width < MIN_LABEL_WIDTH
                     ? `<span class="bar-label-outside">${prog}%</span>`
                     : '';
-                rowHtml += `<div class="timeline-row">${baselineHtml}<div class="gantt-bar-wrapper" style="left:${left}px;width:${width}px;" data-taskid="${task.id}">${handles}${resizeHandles}<div class="gantt-bar ${barClass}" onclick="openTaskModal(${task.id})" oncontextmenu="showBarCtxMenu(event,${task.id})" onmouseenter="showTooltip(event,${tooltipData})" onmouseleave="hideTooltip()"><div class="progress-fill" style="width:${prog}%"></div>${labelHtml}</div>${outsideLabelHtml}</div></div>`;
+                const overdueBadge = isOverdue ? `<span class="bar-overdue-badge" title="Overdue"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>` : '';
+                rowHtml += `<div class="timeline-row">${baselineHtml}<div class="gantt-bar-wrapper" style="left:${left}px;width:${width}px;" data-taskid="${task.id}">${handles}${resizeHandles}<div class="gantt-bar ${barClass}${criticalClass}" onclick="openTaskModal(${task.id})" oncontextmenu="showBarCtxMenu(event,${task.id})" onmouseenter="showTooltip(event,${tooltipData})" onmouseleave="hideTooltip()"><div class="progress-fill" style="width:${prog}%"></div>${labelHtml}</div>${overdueBadge}${outsideLabelHtml}</div></div>`;
             }
 
             if(task.deps && task.deps.length > 0) {
@@ -1856,17 +1884,19 @@
                 const MIN_ELBOW = 20; // below this gap, the plain elbow would be too cramped to read
                 if (gap >= MIN_ELBOW) {
                     // Plenty of room: exact same shape as always — proportional midpoint elbow.
-                    // Untouched from the original so wide-gap arrows never change.
                     const midx = x1 + gap / 2;
                     pathStr = `M ${x1} ${y1} L ${midx} ${y1} L ${midx} ${y2} L ${arrowEnd} ${y2}`;
                 } else {
-                    // Gap too tight for a normal elbow (or a backward dependency): loop the
-                    // line out to a fixed minimum size instead of shrinking the elbow down to
-                    // an illegible nub. The loop always has the same footprint regardless of
-                    // how close the bars are, so the arrow stays readable at any zoom level.
-                    const kick = 15;
+                    // Bars too close together for a normal elbow (any zoom level — this check is
+                    // gap-based, not scale-based, so it applies identically in Daily, Weekly and
+                    // Monthly). The step-back point (loopX) is anchored to whichever is further
+                    // left — a fixed distance from the source's exit, OR a fixed distance from
+                    // the target's own entry — so it stays clearly separated from BOTH ends even
+                    // when the bars actually overlap in time (target starts before source ends),
+                    // instead of collapsing into a cramped, barely-visible kink.
+                    const kick = 20;
                     const midY = y1 + (y2 - y1) / 2;
-                    const loopX = x1 - 10;
+                    const loopX = Math.min(x1 - 12, arrowEnd - 24);
                     pathStr = `M ${x1} ${y1} L ${x1 + kick} ${y1} L ${x1 + kick} ${midY} L ${loopX} ${midY} L ${loopX} ${y2} L ${arrowEnd} ${y2}`;
                 }
             }
